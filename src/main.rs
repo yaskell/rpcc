@@ -23,6 +23,26 @@ fn main() {
 }
 
 fn lex(mut file: String) {
+    let tokens: Vec<Token> = Vec::new();
+
+
+    while !file.is_empty() {
+        if file.starts_with(char::is_whitespace) {
+            file = file.trim_start().to_string();
+        } else {
+            let mut longest_capture: Option<String> = None;
+            let mut token: Token;
+
+                // let mut capture = token.get_regex().captures(file);
+                // match longest_capture {
+                //     None => continue,
+                //     Some(x) =>  if capture.length() > longest_capture {
+                //         longest_match = capture;
+                //         token = token(capture)
+                //
+                //     }}
+            }
+        }
     }
 
 fn parse() {
