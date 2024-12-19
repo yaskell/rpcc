@@ -3,16 +3,16 @@ use std::process;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let config = Arguments::new(&args);
+    let arguments = Arguments::new(&args);
 
-    match config.flag {
+    match arguments.flag {
         Some(flag) => match flag {
             Flag::Lex => lex(), 
             Flag::Parse => parse(), 
             Flag::Codegen => codegen(),
             Flag::Assembly => assembly(),
         }
-        None => println!("Using file '{}'", config.file_path),
+        None => println!("Using file '{}'", arguments.file_path),
     }
 
     process::exit(0);
