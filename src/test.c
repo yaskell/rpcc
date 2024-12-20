@@ -1,14 +1,14 @@
-  hello
-
-
+hello
 this
-
-
+()
+{
+}
 is
-
-
+int
+Int
 my
-
-
-
-file;
+return 
+21
+void
+file
+;
