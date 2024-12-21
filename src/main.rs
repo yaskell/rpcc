@@ -4,7 +4,6 @@ mod lexer;
 mod token;
 
 use lexer::lex;
-use token::Token;
 
 use std::process;
 use std::fs;
@@ -15,13 +14,29 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let arguments = Arguments::new(&args);
     let file_content = fs::read_to_string(&arguments.file_path).expect("Could not read file");
-    
-    let tokens: Vec<Token> = lex(file_content);
-    println!("final array = {:?}", tokens);
+
+    let mut stop_before_parsing: bool = false;
+    let mut stop_before_assembly_generation: bool = false;
+    let mut stop_before_code_emission: bool = false;
+    let mut emit_assembly_file: bool = false;
+
+    match arguments.flag {
+        Some(Flag::Lex) => stop_before_parsing = true,
+        Some(Flag::Parse) => stop_before_assembly_generation = true,
+        Some(Flag::Codegen) => stop_before_code_emission = true,
+        Some(Flag::Assembly) => emit_assembly_file = true,
+        None => {},
+    };
+
+
+    println!("Lexed file contents: {:?}", lex(file_content));
+    if stop_before_parsing { println!("Stopped before parsing"); process::exit(0); }
+    if stop_before_assembly_generation { println!("Stopped before generating assembly"); process::exit(0); }
+    if stop_before_code_emission { println!("Stopped before code emission"); process::exit(0); }
+    if emit_assembly_file { todo!() }
     process::exit(0);
+    
 }
-
-
 
 
 enum Flag {
@@ -51,28 +66,29 @@ impl Arguments {
             process::exit(1)
         }
 
-        let file_path = args[1].clone();
-        let flag: Option<Flag> = if args.len() == 3 {
-            match args[2].as_str() {
-                "--lex" => Some(Flag::Lex),
-                "--parse" => Some(Flag::Parse),
-                "--codegen" => Some(Flag::Codegen),
-                "-S" => Some(Flag::Assembly),
-                _ => {
-                    eprintln!("ERROR: flag `{}` not recognized", args[2].as_str());
-                    usage_message();
-                    process::exit(1);
-                }
-            }
-        } else {
-            None
-        };
+        let mut file_path = args[2].clone();
+        let mut flag = None;
+       
+        if args.len() == 3 {
+            file_path = args[2].clone();
+            flag = match args[1].as_str() {
+                    "--lex" => Some(Flag::Lex),
+                    "--parse" => Some(Flag::Parse),
+                    "--codegen" => Some(Flag::Codegen),
+                    "-S" => Some(Flag::Assembly),
+                    _ => {
+                        eprintln!("ERROR: flag `{}` not recognized", args[1].as_str());
+                        usage_message();
+                        process::exit(1);
+                    }
+            };
+        }
 
         Arguments { file_path, flag }
     }
 }
 
 fn usage_message() {
-    eprintln!("Usage: <path> [--lex | --parse | --codegen | -S]");
+    eprintln!("Usage: [--lex | --parse | --codegen | -S] <path>");
 }
 
