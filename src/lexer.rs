@@ -1,5 +1,6 @@
 use crate::token::*;
 use crate::process;
+use regex::Regex;
 
 pub fn lex(mut file: String) -> Vec<Token> {
 
@@ -34,7 +35,8 @@ pub fn lex(mut file: String) -> Vec<Token> {
 
             match longest_capture {
                 None => {
-                    eprintln!("Invalid keyword found");
+                    let start_to_first_word_boundry = Regex::new(r"^.*?\b").unwrap();
+                    eprintln!("Invalid keyword found: {}", start_to_first_word_boundry.find(&file).unwrap().as_str());
                     process::exit(1);
                 },                
                 Some(x) => match &captured_token.unwrap() {
