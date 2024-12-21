@@ -1,6 +1,7 @@
 use crate::token::*;
 use crate::process;
 use regex::Regex;
+use regex::Match;
 
 pub fn lex(mut file: String) -> Vec<Token> {
 
@@ -35,9 +36,17 @@ pub fn lex(mut file: String) -> Vec<Token> {
 
             match longest_capture {
                 None => {
-                    let start_to_first_word_boundry = Regex::new(r"^.*?\b").unwrap();
-                    eprintln!("Invalid keyword found: {}", start_to_first_word_boundry.find(&file).unwrap().as_str());
-                    process::exit(1);
+                    match check_if_comment(&file) {
+                        Some(x) =>  {
+                            longest_capture = Some(x);
+                        },
+                        None => {
+                            let start_to_first_word_boundry = Regex::new(r"^.*?\b").unwrap();
+                            eprintln!("Invalid keyword: `{}`", start_to_first_word_boundry.find(&file).unwrap().as_str());
+                            process::exit(1);
+                        }
+                    }
+
                 },                
                 Some(x) => match &captured_token.unwrap() {
                     Token::Identifier(_) => tokens.push(Token::Identifier(x.as_str().to_string())),
@@ -57,4 +66,13 @@ pub fn lex(mut file: String) -> Vec<Token> {
     }
 
     tokens
+}
+
+fn check_if_comment(file: &String) -> Option<Match> {
+    let single_line_comment = Regex::new(r"//[^\r\n]*").unwrap();
+    let multi_line_comment = Regex::new(r"/\*.*?\*/").unwrap();
+
+    if let Some(x) = single_line_comment.find(&file) { return Some(x) };
+    if let Some(x) = multi_line_comment.find(&file) { return Some(x) };
+    None
 }

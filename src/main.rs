@@ -35,7 +35,6 @@ fn main() {
     if stop_before_code_emission { println!("Stopped before code emission"); process::exit(0); }
     if emit_assembly_file { todo!() }
     process::exit(0);
-    
 }
 
 
