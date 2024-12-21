@@ -122,22 +122,22 @@ fn initialize_token_definition() -> Vec<TokenDefinition> {
         },
         TokenDefinition {
             token_type: Token::CloseBrace,
-            regex: Regex::new(r"}").unwrap(),
+            regex: Regex::new(r"^\}").unwrap(),
 
         },
         TokenDefinition {
             token_type: Token::OpenBrace,
-            regex: Regex::new(r"\{").unwrap(),
+            regex: Regex::new(r"^\{").unwrap(),
 
         },        
         TokenDefinition {
             token_type: Token::CloseParan,
-            regex: Regex::new(r"\)").unwrap(),
+            regex: Regex::new(r"^\)").unwrap(),
 
         },
         TokenDefinition {
             token_type: Token::OpenParan,
-            regex: Regex::new(r"\(").unwrap(),
+            regex: Regex::new(r"^\(").unwrap(),
 
         },
         TokenDefinition {
@@ -147,7 +147,7 @@ fn initialize_token_definition() -> Vec<TokenDefinition> {
         },        
         TokenDefinition {
             token_type: Token::Int,
-            regex: Regex::new(r"int\b").unwrap(),
+            regex: Regex::new(r"^int\b").unwrap(),
 
         },
         TokenDefinition {
