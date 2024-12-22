@@ -41,8 +41,8 @@ pub fn lex(mut file: String) -> Vec<Token> {
                             longest_capture = Some(x);
                         },
                         None => {
-                            let start_to_first_word_boundry = Regex::new(r"^.*?\b").unwrap();
-                            eprintln!("Invalid keyword: `{}`", start_to_first_word_boundry.find(&file).unwrap().as_str());
+                            let start_to_first_word_boundry = Regex::new(r"^[\s\S]*?(:?\b|$)").unwrap();
+                            eprintln!("Invalid keyword: \"{}\"", start_to_first_word_boundry.find(&file).unwrap().as_str());
                             process::exit(1);
                         }
                     }
@@ -70,7 +70,7 @@ pub fn lex(mut file: String) -> Vec<Token> {
 
 fn check_if_comment(file: &String) -> Option<Match> {
     let single_line_comment = Regex::new(r"//[^\r\n]*").unwrap();
-    let multi_line_comment = Regex::new(r"/\*.*?\*/").unwrap();
+    let multi_line_comment = Regex::new(r"\/\*[\s\S]*? \*\/").unwrap();
 
     if let Some(x) = single_line_comment.find(&file) { return Some(x) };
     if let Some(x) = multi_line_comment.find(&file) { return Some(x) };
