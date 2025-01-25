@@ -2,8 +2,10 @@
 
 mod lexer;
 mod token;
+mod ast;
 
 use lexer::lex;
+use ast::*;
 
 use std::process;
 use std::fs;
