@@ -1,7 +1,7 @@
 use regex::Regex;
 use std::mem;
 
-#[derive(PartialEq, Eq, Hash, Debug)]
+#[derive(PartialEq, Eq, Hash, Debug, Clone)]
 pub enum Token {
     Identifier(String),
     Constant(i32),

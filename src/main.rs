@@ -3,9 +3,10 @@
 mod lexer;
 mod token;
 mod ast;
+mod parser;
 
 use lexer::lex;
-use ast::*;
+use parser::parse;
 
 use std::process;
 use std::fs;
@@ -30,9 +31,11 @@ fn main() {
         None => {},
     };
 
-
-    println!("Lexed file contents: {:?}", lex(file_content));
+    let lexed_val = lex(file_content);
+    println!("Lexed file contents: {:?}", &lexed_val);
     if stop_before_parsing { println!("Stopped before parsing"); process::exit(0); }
+    let parsed_val = parser::parse(&mut lexed_val.clone());
+    println!("Parsed file contents: {:?}", parsed_val);
     if stop_before_assembly_generation { println!("Stopped before generating assembly"); process::exit(0); }
     if stop_before_code_emission { println!("Stopped before code emission"); process::exit(0); }
     if emit_assembly_file { todo!() }
