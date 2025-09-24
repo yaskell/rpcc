@@ -9,7 +9,11 @@ pub fn parse(tokens: &mut Vec<Token>) -> Program {
 
 fn parse_program(tokens: &mut Vec<Token>) -> Program {
     let function_val = parse_function(tokens);
-    Program { function_definition: function_val }
+    let result = Program { function_definition: function_val };
+    if !tokens.is_empty() {
+        panic!("Error: unexpected token '{:?} at end of program'", tokens)
+    }
+    result
 }
 
 fn expect(expected: Token, tokens: &mut Vec<Token>) {
