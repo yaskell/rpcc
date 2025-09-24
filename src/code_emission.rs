@@ -53,21 +53,21 @@ fn translate_function_definition(function_definition: ast::FunctionDefinition) -
 }
 
 fn translate_identifier(identifier: ast::Identifier) -> Identifier {
-    Identifier( identifier.0 )
+    Identifier(identifier.0)
 }
 
 fn translate_statement(statement: ast::Statement) -> Vec<Instruction> {
     match statement {
         ast::Statement::Return(expression) => vec![ 
-            Instruction::Move( 
-                Move { 
-                    src: Operand::Imm(translate_expression(expression)), 
-                    dst: Operand::Register(Register { 0: "EAX".to_string() }) 
+            Instruction::Move(
+                Move {
+                    src: Operand::Imm(translate_expression(expression)),
+                    dst: Operand::Register(Register("EAX".to_string()))
                 }
-            ), 
-            Instruction::Ret 
+            ),
+            Instruction::Ret
         ]
-    } 
+    }
 }
 
 fn translate_expression(expression: ast::Expression) -> Imm {
@@ -77,5 +77,5 @@ fn translate_expression(expression: ast::Expression) -> Imm {
 }
 
 fn translate_int(int: ast::Int) -> Imm {
-    Imm { 0: int.0}
+    Imm(int.0)
 }
