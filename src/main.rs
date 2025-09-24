@@ -1,18 +1,16 @@
 #![feature(variant_count)]
 
 mod lexer;
-mod token;
-mod ast;
 mod parser;
+mod assembly_generation;
 mod code_emission;
-
-use lexer::lex;
 
 use std::process;
 use std::fs;
 use std::env;
 
-use crate::code_emission::translate_program;
+use crate::assembly_generation::translate_program;
+use crate::lexer::lex;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
