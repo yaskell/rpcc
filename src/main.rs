@@ -77,7 +77,7 @@ impl Arguments {
             process::exit(1)
         }
 
-        let mut file_path = args[2].clone();
+        let mut file_path = args[1].clone();
         let mut flag = None;
 
         if args.len() == 3 {
