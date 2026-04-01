@@ -1,6 +1,6 @@
 use crate::process;
-use regex::Regex;
 use regex::Match;
+use regex::Regex;
 use std::sync::LazyLock;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
@@ -103,23 +103,20 @@ pub fn lex(mut file: String) -> Vec<Token> {
         }
 
         match longest_capture {
-            None => {
-                match check_if_comment(&file) {
-                    Some(x) => {
-                        file = file[x.end()..].to_string();
-                        continue;
-                    }
-                    None => {
-                        let start_to_first_word_boundary =
-                            Regex::new(r"^[\s\S]*?(?:\b|$)").unwrap();
-                        eprintln!(
-                            "Invalid token: \"{}\"",
-                            start_to_first_word_boundary.find(&file).unwrap().as_str()
-                        );
-                        process::exit(1);
-                    }
+            None => match check_if_comment(&file) {
+                Some(x) => {
+                    file = file[x.end()..].to_string();
+                    continue;
                 }
-            }
+                None => {
+                    let start_to_first_word_boundary = Regex::new(r"^[\s\S]*?(?:\b|$)").unwrap();
+                    eprintln!(
+                        "Invalid token: \"{}\"",
+                        start_to_first_word_boundary.find(&file).unwrap().as_str()
+                    );
+                    process::exit(1);
+                }
+            },
 
             Some(capture) => {
                 let token_type = captured_token.unwrap();
@@ -128,7 +125,8 @@ pub fn lex(mut file: String) -> Vec<Token> {
                     Token::Identifier(_) => {
                         let text = capture.as_str();
 
-                        let keyword_match = KEYWORD_TOKENS.iter().find(|kw| kw.regex.is_match(text));
+                        let keyword_match =
+                            KEYWORD_TOKENS.iter().find(|kw| kw.regex.is_match(text));
 
                         if let Some(kw) = keyword_match {
                             tokens.push(kw.token_type.clone());
@@ -139,7 +137,10 @@ pub fn lex(mut file: String) -> Vec<Token> {
 
                     Token::Constant(_) => {
                         tokens.push(Token::Constant(
-                            capture.as_str().parse::<i32>().expect("Could not convert to i32"),
+                            capture
+                                .as_str()
+                                .parse::<i32>()
+                                .expect("Could not convert to i32"),
                         ));
                     }
 
@@ -166,7 +167,11 @@ fn check_if_comment(file: &String) -> Option<Match> {
     let single_line_comment = Regex::new(r"//[^\r\n]*").unwrap();
     let multi_line_comment = Regex::new(r"\/\*[\s\S]*? \*\/").unwrap();
 
-    if let Some(x) = single_line_comment.find(&file) { return Some(x) };
-    if let Some(x) = multi_line_comment.find(&file) { return Some(x) };
+    if let Some(x) = single_line_comment.find(&file) {
+        return Some(x);
+    };
+    if let Some(x) = multi_line_comment.find(&file) {
+        return Some(x);
+    };
     None
 }

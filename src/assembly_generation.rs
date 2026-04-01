@@ -38,17 +38,18 @@ pub enum Operand {
     Register(Register),
 }
 
-
-pub fn translate_program(program: parser::Program) -> ASMProgram { 
-    ASMProgram { 
-        function_definition: translate_function_definition(program.function_definition) 
+pub fn translate_program(program: parser::Program) -> ASMProgram {
+    ASMProgram {
+        function_definition: translate_function_definition(program.function_definition),
     }
 }
 
-fn translate_function_definition(function_definition: parser::FunctionDefinition) -> ASMFunctionDefinition {
-    ASMFunctionDefinition { 
+fn translate_function_definition(
+    function_definition: parser::FunctionDefinition,
+) -> ASMFunctionDefinition {
+    ASMFunctionDefinition {
         name: translate_identifier(function_definition.name),
-        instructions: translate_statement(function_definition.body)
+        instructions: translate_statement(function_definition.body),
     }
 }
 
@@ -58,15 +59,13 @@ fn translate_identifier(identifier: parser::Identifier) -> Identifier {
 
 fn translate_statement(statement: parser::Statement) -> Vec<Instruction> {
     match statement {
-        parser::Statement::Return(expression) => vec![ 
-            Instruction::Move(
-                Move {
-                    src: Operand::Imm(translate_expression(expression)),
-                    dst: Operand::Register(Register("EAX".to_string()))
-                }
-            ),
-            Instruction::Ret
-        ]
+        parser::Statement::Return(expression) => vec![
+            Instruction::Move(Move {
+                src: Operand::Imm(translate_expression(expression)),
+                dst: Operand::Register(Register("EAX".to_string())),
+            }),
+            Instruction::Ret,
+        ],
     }
 }
 

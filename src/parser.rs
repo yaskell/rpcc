@@ -10,7 +10,7 @@ pub struct Program {
 #[derive(Debug)]
 pub struct FunctionDefinition {
     pub name: Identifier,
-    pub body: Statement
+    pub body: Statement,
 }
 
 #[derive(Debug)]
@@ -35,7 +35,9 @@ pub fn parse(tokens: &mut Vec<Token>) -> Program {
 
 fn parse_program(tokens: &mut Vec<Token>) -> Program {
     let function_val = parse_function(tokens);
-    let result = Program { function_definition: function_val };
+    let result = Program {
+        function_definition: function_val,
+    };
     if !tokens.is_empty() {
         panic!("Error: unexpected token '{:?} at end of program'", tokens)
     }
@@ -45,7 +47,10 @@ fn parse_program(tokens: &mut Vec<Token>) -> Program {
 fn expect(expected: Token, tokens: &mut Vec<Token>) {
     let actual = tokens.remove(0);
     if actual != expected {
-        panic!("Syntax error: expected token '{:?}' did not match actual token '{:?}'", expected, actual)
+        panic!(
+            "Syntax error: expected token '{:?}' did not match actual token '{:?}'",
+            expected, actual
+        )
     }
 }
 
@@ -59,14 +64,14 @@ fn parse_statement(tokens: &mut Vec<Token>) -> Statement {
 fn parse_expression(tokens: &mut Vec<Token>) -> Expression {
     match tokens.remove(0) {
         Token::Constant(x) => Expression::Constant(parse_int(x)),
-        value => panic!("Syntax error: expected <constant>, found '{:?}'", value)
+        value => panic!("Syntax error: expected <constant>, found '{:?}'", value),
     }
 }
 
 fn parse_identifier(tokens: &mut Vec<Token>) -> Identifier {
     match tokens.remove(0) {
         Token::Identifier(x) => Identifier(x),
-        value => panic!("Syntax error: expected <Identifier>, found: '{:?}'", value)
+        value => panic!("Syntax error: expected <Identifier>, found: '{:?}'", value),
     }
 }
 
