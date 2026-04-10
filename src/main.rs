@@ -81,16 +81,18 @@ struct Arguments {
 
 impl Arguments {
     fn new(args: &[String]) -> Arguments {
-        if args.len() < 2 {
+        if args.len() > 1 && args[1] == "--help" {
+            usage_message();
+        }
+
+        if args.len() < 3 {
             eprintln!("ERROR: not enough arguments");
             usage_message();
-            process::exit(1);
         }
 
         if args.len() > 3 {
             eprintln!("ERROR: too many arguments");
             usage_message();
-            process::exit(1)
         }
 
         let mut file_path = args[1].clone();
@@ -106,7 +108,6 @@ impl Arguments {
                 _ => {
                     eprintln!("ERROR: flag `{}` not recognized", args[1].as_str());
                     usage_message();
-                    process::exit(1);
                 }
             };
         }
@@ -115,6 +116,17 @@ impl Arguments {
     }
 }
 
-fn usage_message() {
-    eprintln!("Usage: [--lex | --parse | --codegen | -S] <path>");
+fn usage_message() -> ! {
+    eprintln!(
+        "Usage: crust [OPTIONS] <file.c>
+
+Options:
+    --lex        Run lexer only and print tokens
+    --parse      Run lexer + parser and print AST
+    --codegen    Run up to assembly generation and print result
+    -S           Emit assembly file (.s) but do not remove it
+    --help       Show this help message
+"
+    );
+    std::process::exit(1);
 }
