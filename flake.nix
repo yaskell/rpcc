@@ -18,6 +18,10 @@
         gdb
         python315
       ];
+
+      shellHook = ''
+        export PATH=$PATH:./target/release
+      '';
     };
   };
 }

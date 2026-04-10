@@ -8,12 +8,16 @@ use std::fs;
 use std::process;
 
 use crate::assembly_generation::translate_program;
+use crate::code_emission::emit;
 use crate::lexer::lex;
+
+use std::process::Command;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     let arguments = Arguments::new(&args);
     let file_content = fs::read_to_string(&arguments.file_path).expect("Could not read file");
+    let filename = &arguments.file_path.trim_end_matches(".c");
 
     let mut stop_before_parsing: bool = false;
     let mut stop_before_assembly_generation: bool = false;
@@ -29,26 +33,38 @@ fn main() {
     };
 
     let lexed_val = lex(file_content);
-    println!("Lexed file contents: {:?}", &lexed_val);
     if stop_before_parsing {
         println!("Stopped before parsing");
+        println!("Lexed file contents: {:?}", &lexed_val);
         process::exit(0);
     }
     let parsed_val = parser::parse(&mut lexed_val.clone());
-    println!("Parsed file contents: {:?}", &parsed_val);
     if stop_before_assembly_generation {
         println!("Stopped before generating assembly");
+        println!("Parsed file contents: {:?}", &parsed_val);
         process::exit(0);
     }
-    println!("Assembly Generation: {:?}", translate_program(parsed_val));
+    let asm_generation_val = translate_program(parsed_val);
     if stop_before_code_emission {
         println!("Stopped before code emission");
+        println!("Assembly Generation: {:?}", &asm_generation_val);
         process::exit(0);
     }
-    if emit_assembly_file {
-        todo!()
+
+    if let Ok(_) = emit(filename, asm_generation_val) {
+        Command::new("gcc")
+            .args([format!("{}.s", filename).as_str(), "-o", filename])
+            .output()
+            .expect("has failed");
+
+        if !emit_assembly_file {
+            let _ = fs::remove_file(format!("{}.s", filename).as_str());
+        }
+
+        process::exit(0);
     }
-    process::exit(0);
+
+    process::exit(1);
 }
 
 enum Flag {

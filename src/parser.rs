@@ -13,11 +13,9 @@ pub struct FunctionDefinition {
     pub body: Statement,
 }
 
-#[derive(Debug)]
-pub struct Identifier(pub String);
+pub type Identifier = String;
 
-#[derive(Debug)]
-pub struct Int(pub i32);
+pub type Int = i32;
 
 #[derive(Debug)]
 pub enum Statement {
@@ -44,7 +42,7 @@ fn parse_program(tokens: &mut Vec<Token>) -> Program {
     result
 }
 
-fn expect(expected: Token, tokens: &mut Vec<Token>) {
+fn consume(expected: Token, tokens: &mut Vec<Token>) {
     let actual = tokens.remove(0);
     if actual != expected {
         panic!(
@@ -55,9 +53,9 @@ fn expect(expected: Token, tokens: &mut Vec<Token>) {
 }
 
 fn parse_statement(tokens: &mut Vec<Token>) -> Statement {
-    expect(Token::Return, tokens);
+    consume(Token::Return, tokens);
     let return_val = parse_expression(tokens);
-    expect(Token::Semicolon, tokens);
+    consume(Token::Semicolon, tokens);
     Statement::Return(return_val)
 }
 
@@ -70,24 +68,24 @@ fn parse_expression(tokens: &mut Vec<Token>) -> Expression {
 
 fn parse_identifier(tokens: &mut Vec<Token>) -> Identifier {
     match tokens.remove(0) {
-        Token::Identifier(x) => Identifier(x),
+        Token::Identifier(x) => x,
         value => panic!("Syntax error: expected <Identifier>, found: '{:?}'", value),
     }
 }
 
 fn parse_int(int: i32) -> Int {
-    Int(int)
+    int
 }
 
 fn parse_function(tokens: &mut Vec<Token>) -> FunctionDefinition {
-    expect(Token::Int, tokens);
+    consume(Token::Int, tokens);
     let identifier_val = parse_identifier(tokens);
-    expect(Token::OpenParan, tokens);
-    expect(Token::Void, tokens);
-    expect(Token::CloseParan, tokens);
-    expect(Token::OpenBrace, tokens);
+    consume(Token::OpenParan, tokens);
+    consume(Token::Void, tokens);
+    consume(Token::CloseParan, tokens);
+    consume(Token::OpenBrace, tokens);
     let statement_val = parse_statement(tokens);
-    expect(Token::CloseBrace, tokens);
+    consume(Token::CloseBrace, tokens);
     FunctionDefinition {
         name: identifier_val,
         body: statement_val,

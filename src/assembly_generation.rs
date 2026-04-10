@@ -7,7 +7,7 @@ pub struct ASMProgram {
 
 #[derive(Debug)]
 pub struct ASMFunctionDefinition {
-    pub name: Identifier,
+    pub name: String,
     pub instructions: Vec<Instruction>,
 }
 
@@ -18,15 +18,6 @@ pub enum Instruction {
 }
 
 #[derive(Debug)]
-pub struct Identifier(pub String);
-
-#[derive(Debug)]
-pub struct Imm(pub i32);
-
-#[derive(Debug)]
-pub struct Register(pub String);
-
-#[derive(Debug)]
 pub struct Move {
     pub src: Operand,
     pub dst: Operand,
@@ -34,8 +25,13 @@ pub struct Move {
 
 #[derive(Debug)]
 pub enum Operand {
-    Imm(Imm),
+    Imm(i32),
     Register(Register),
+}
+
+#[derive(Debug)]
+pub enum Register {
+    EAX,
 }
 
 pub fn translate_program(program: parser::Program) -> ASMProgram {
@@ -53,28 +49,28 @@ fn translate_function_definition(
     }
 }
 
-fn translate_identifier(identifier: parser::Identifier) -> Identifier {
-    Identifier(identifier.0)
+fn translate_identifier(identifier: parser::Identifier) -> String {
+    identifier
 }
 
 fn translate_statement(statement: parser::Statement) -> Vec<Instruction> {
     match statement {
         parser::Statement::Return(expression) => vec![
             Instruction::Move(Move {
-                src: Operand::Imm(translate_expression(expression)),
-                dst: Operand::Register(Register("EAX".to_string())),
+                src: translate_expression(expression),
+                dst: Operand::Register(Register::EAX),
             }),
             Instruction::Ret,
         ],
     }
 }
 
-fn translate_expression(expression: parser::Expression) -> Imm {
+fn translate_expression(expression: parser::Expression) -> Operand {
     match expression {
         parser::Expression::Constant(int) => translate_int(int),
     }
 }
 
-fn translate_int(int: parser::Int) -> Imm {
-    Imm(int.0)
+fn translate_int(int: parser::Int) -> Operand {
+    Operand::Imm(int)
 }

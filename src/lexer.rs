@@ -163,7 +163,7 @@ pub fn lex(mut file: String) -> Vec<Token> {
     tokens
 }
 
-fn check_if_comment(file: &String) -> Option<Match> {
+fn check_if_comment(file: &String) -> Option<Match<'_>> {
     let single_line_comment = Regex::new(r"//[^\r\n]*").unwrap();
     let multi_line_comment = Regex::new(r"\/\*[\s\S]*? \*\/").unwrap();
 
