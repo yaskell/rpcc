@@ -19,47 +19,36 @@ fn main() {
     let file_content = fs::read_to_string(&arguments.file_path).expect("Could not read file");
     let filename = &arguments.file_path.trim_end_matches(".c");
 
-    let mut stop_before_parsing: bool = false;
-    let mut stop_before_assembly_generation: bool = false;
-    let mut stop_before_code_emission: bool = false;
-    let mut emit_assembly_file: bool = false;
-
-    match arguments.flag {
-        Some(Flag::Lex) => stop_before_parsing = true,
-        Some(Flag::Parse) => stop_before_assembly_generation = true,
-        Some(Flag::Codegen) => stop_before_code_emission = true,
-        Some(Flag::Assembly) => emit_assembly_file = true,
-        None => {}
-    };
-
-    let lexed_val = lex(file_content);
-    if stop_before_parsing {
+    let lexed_val = lexer::lex(file_content);
+    if let Some(Flag::Lex) = arguments.flag {
         println!("Stopped before parsing");
         println!("Lexed file contents: {:?}", &lexed_val);
         process::exit(0);
     }
     let parsed_val = parser::parse(&mut lexed_val.clone());
-    if stop_before_assembly_generation {
+    if let Some(Flag::Parse) = arguments.flag {
         println!("Stopped before generating assembly");
         println!("Parsed file contents: {:?}", &parsed_val);
         process::exit(0);
     }
-    let asm_generation_val = translate_program(parsed_val);
-    if stop_before_code_emission {
+    let asm_generation_val = assembly_generation::translate_program(parsed_val);
+    if let Some(Flag::Codegen) = arguments.flag {
         println!("Stopped before code emission");
         println!("Assembly Generation: {:?}", &asm_generation_val);
         process::exit(0);
     }
 
-    if let Ok(_) = emit(filename, asm_generation_val) {
+    if let Ok(_) = code_emission::emit(filename, asm_generation_val) {
         Command::new("gcc")
             .args([format!("{}.s", filename).as_str(), "-o", filename])
             .output()
             .expect("has failed");
 
-        if !emit_assembly_file {
-            let _ = fs::remove_file(format!("{}.s", filename).as_str());
+        if let Some(Flag::Assembly) = arguments.flag {
+            process::exit(0);
         }
+
+        let _ = fs::remove_file(format!("{}.s", filename).as_str());
 
         process::exit(0);
     }
