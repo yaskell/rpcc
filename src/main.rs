@@ -7,10 +7,6 @@ use std::env;
 use std::fs;
 use std::process;
 
-use crate::assembly_generation::translate_program;
-use crate::code_emission::emit;
-use crate::lexer::lex;
-
 use std::process::Command;
 
 fn main() {
