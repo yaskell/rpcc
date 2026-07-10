@@ -14,8 +14,7 @@ use crate::lexer::lex;
 use std::process::Command;
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    let arguments = Arguments::new(&args);
+    let arguments = Arguments::new(&env::args().collect::<Vec<String>>());
     let file_content = fs::read_to_string(&arguments.file_path).expect("Could not read file");
 
     let lexed_val = lexer::lex(file_content);
