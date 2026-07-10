@@ -19,12 +19,14 @@ fn main() {
         println!("Lexed file contents: {:?}", &lexed_val);
         process::exit(0);
     }
+
     let parsed_val = parser::parse(&mut lexed_val.clone());
     if let Some(Flag::Parse) = arguments.flag {
         println!("Stopped before generating assembly");
         println!("Parsed file contents: {:?}", &parsed_val);
         process::exit(0);
     }
+
     let asm_generation_val = assembly_generation::translate_program(parsed_val);
     if let Some(Flag::Codegen) = arguments.flag {
         println!("Stopped before code emission");
