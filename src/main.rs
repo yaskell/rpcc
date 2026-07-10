@@ -17,7 +17,6 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let arguments = Arguments::new(&args);
     let file_content = fs::read_to_string(&arguments.file_path).expect("Could not read file");
-    let filename = &arguments.file_path.trim_end_matches(".c");
 
     let lexed_val = lexer::lex(file_content);
     if let Some(Flag::Lex) = arguments.flag {
@@ -38,6 +37,7 @@ fn main() {
         process::exit(0);
     }
 
+    let filename = &arguments.file_path.trim_end_matches(".c");
     if let Ok(_) = code_emission::emit(filename, asm_generation_val) {
         Command::new("gcc")
             .args([format!("{}.s", filename).as_str(), "-o", filename])
