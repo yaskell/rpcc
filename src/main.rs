@@ -73,7 +73,7 @@ impl Arguments {
             usage_message();
         }
 
-        if args.len() < 3 {
+        if args.len() < 2 {
             eprintln!("ERROR: not enough arguments");
             usage_message();
         }
