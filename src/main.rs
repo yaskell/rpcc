@@ -7,8 +7,6 @@ use std::env;
 use std::fs;
 use std::process;
 
-use std::process::Command;
-
 fn main() {
     let arguments = Arguments::new(&env::args().collect::<Vec<String>>());
     let file_content = fs::read_to_string(&arguments.file_path).expect("Could not read file");
@@ -36,7 +34,7 @@ fn main() {
 
     let filename = &arguments.file_path.trim_end_matches(".c");
     if let Ok(_) = code_emission::emit(filename, asm_generation_val) {
-        Command::new("gcc")
+        process::Command::new("gcc")
             .args([format!("{}.s", filename).as_str(), "-o", filename])
             .output()
             .expect("has failed");
