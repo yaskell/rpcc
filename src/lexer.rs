@@ -13,6 +13,9 @@ pub enum Token {
     OpenBrace,
     CloseBrace,
     Semicolon,
+    Tilde,
+    Minus,
+    DoubleMinus,
     Int,
     Void,
     Return,
@@ -70,6 +73,18 @@ pub static OTHER_TOKENS: LazyLock<Vec<TokenDefinition>> = LazyLock::new(|| {
         TokenDefinition {
             token_type: Token::Semicolon,
             regex: Regex::new(r"^;").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::Minus,
+            regex: Regex::new(r"^-").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::DoubleMinus,
+            regex: Regex::new(r"^--").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::Tilde,
+            regex: Regex::new(r"^~").unwrap(),
         },
     ]
 });
@@ -150,6 +165,9 @@ pub fn lex(mut file: String) -> Vec<Token> {
                     Token::OpenBrace => tokens.push(Token::OpenBrace),
                     Token::CloseBrace => tokens.push(Token::CloseBrace),
                     Token::Semicolon => tokens.push(Token::Semicolon),
+                    Token::Minus => tokens.push(Token::Minus),
+                    Token::DoubleMinus => tokens.push(Token::DoubleMinus),
+                    Token::Tilde => tokens.push(Token::Tilde),
 
                     Token::Int => tokens.push(Token::Int),
                     Token::Void => tokens.push(Token::Void),

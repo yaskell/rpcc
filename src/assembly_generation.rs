@@ -68,6 +68,7 @@ fn translate_statement(statement: parser::Statement) -> Vec<Instruction> {
 fn translate_expression(expression: parser::Expression) -> Operand {
     match expression {
         parser::Expression::Constant(int) => translate_int(int),
+        _ => todo!(),
     }
 }
 
