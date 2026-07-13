@@ -2,6 +2,7 @@ mod assembly_generation;
 mod code_emission;
 mod lexer;
 mod parser;
+mod tacky;
 
 use std::env;
 use std::fs;
