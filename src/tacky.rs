@@ -7,13 +7,13 @@ type Dst = Identifier; //Dst must always be a temporary Var
 
 #[derive(Debug)]
 pub struct TackyProgram {
-    pub tacky_function_definition: TackyFunctionDefinition,
+    tacky_function_definition: TackyFunctionDefinition,
 }
 
 #[derive(Debug)]
 pub struct TackyFunctionDefinition {
-    pub identifier: Identifier,
-    pub body: Vec<Instruction>,
+    identifier: Identifier,
+    body: Vec<Instruction>,
 }
 
 #[derive(Debug)]
@@ -40,7 +40,7 @@ pub fn translate_program(program: parser::Program) -> TackyProgram {
     }
 }
 
-pub fn translate_function_definition(
+fn translate_function_definition(
     function_definition: parser::FunctionDefinition,
 ) -> TackyFunctionDefinition {
     TackyFunctionDefinition {
@@ -49,11 +49,11 @@ pub fn translate_function_definition(
     }
 }
 
-pub fn translate_identifier(identifier: Identifier) -> String {
+fn translate_identifier(identifier: Identifier) -> String {
     identifier
 }
 
-pub fn translate_statement(statement: parser::Statement) -> Vec<Instruction> {
+fn translate_statement(statement: parser::Statement) -> Vec<Instruction> {
     let mut instructions = Vec::new();
     match statement {
         parser::Statement::Return(expression) => {
@@ -65,7 +65,7 @@ pub fn translate_statement(statement: parser::Statement) -> Vec<Instruction> {
     instructions
 }
 
-pub fn translate_expression(
+fn translate_expression(
     expression: parser::Expression,
     instructions: &mut Vec<Instruction>,
     i: i32,
