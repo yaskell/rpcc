@@ -26,6 +26,13 @@ fn main() {
         process::exit(0);
     }
 
+    let tacky_val = tacky::translate_program(parsed_val.clone());
+    if let Some(Flag::Tacky) = arguments.flag {
+        println!("Stopped before generating assembly, ran tacky compilation pass");
+        println!("Parsed file contents: {:?}", &tacky_val);
+        process::exit(0);
+    }
+
     let asm_generation_val = assembly_generation::translate_program(parsed_val);
     if let Some(Flag::Codegen) = arguments.flag {
         println!("Stopped before code emission");
@@ -57,6 +64,7 @@ enum Flag {
     Parse,
     Codegen,
     Assembly,
+    Tacky,
 }
 
 struct Arguments {
@@ -90,6 +98,7 @@ impl Arguments {
                 "--parse" => Some(Flag::Parse),
                 "--codegen" => Some(Flag::Codegen),
                 "-S" => Some(Flag::Assembly),
+                "--tacky" => Some(Flag::Tacky),
                 _ => {
                     eprintln!("ERROR: flag `{}` not recognized", args[1].as_str());
                     usage_message();
@@ -111,6 +120,7 @@ Options:
     --codegen    Run up to assembly generation and print result
     -S           Emit assembly file (.s) but do not remove it
     --help       Show this help message
+    --tacky      Run tacky compiler pass, stop before assembly generation
 "
     );
     std::process::exit(1);

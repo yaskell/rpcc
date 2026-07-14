@@ -2,12 +2,12 @@ use std::panic;
 
 use crate::lexer::Token;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Program {
     pub function_definition: FunctionDefinition,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FunctionDefinition {
     pub name: Identifier,
     pub body: Statement,
@@ -17,18 +17,18 @@ pub type Identifier = String;
 
 pub type Int = i32;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Statement {
     Return(Expression),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expression {
     Constant(Int),
     Unary(UnaryOperator, Box<Expression>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum UnaryOperator {
     Complement,
     Negate,
