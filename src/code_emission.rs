@@ -1,7 +1,7 @@
-use crate::asm::{self, Function, Instruction, Operand, Program, Register};
+use crate::asm;
 use std::fs;
 
-pub fn emit(program_name: &str, program: Program) -> std::io::Result<()> {
+pub fn emit(program_name: &str, program: asm::Program) -> std::io::Result<()> {
     let mut buffer = String::new();
 
     buffer.push_str(emit_function(program.function).as_str());
@@ -11,7 +11,7 @@ pub fn emit(program_name: &str, program: Program) -> std::io::Result<()> {
     Ok(())
 }
 
-fn emit_function(fun: Function) -> String {
+fn emit_function(fun: asm::Function) -> String {
     return format!(
         "    .globl {}\n{}:\n{}",
         fun.name,
@@ -20,11 +20,11 @@ fn emit_function(fun: Function) -> String {
     );
 }
 
-fn emit_instructions(instructions: Vec<Instruction>) -> String {
+fn emit_instructions(instructions: Vec<asm::Instruction>) -> String {
     let mut b = String::new();
     for instruction in instructions {
         match instruction {
-            Instruction::Move(m) => b.push_str(
+            asm::Instruction::Move(m) => b.push_str(
                 format!(
                     "    movl    {}, {}\n",
                     emit_operand(m.src),
@@ -32,22 +32,22 @@ fn emit_instructions(instructions: Vec<Instruction>) -> String {
                 )
                 .as_str(),
             ),
-            Instruction::Ret => b.push_str("    ret\n"),
-            Instruction::Unary(asm::UnaryInstruction { op, operand }) => todo!(),
-            Instruction::AllocateStack(_) => todo!(),
+            asm::Instruction::Ret => b.push_str("    ret\n"),
+            asm::Instruction::Unary(asm::UnaryInstruction { op, operand }) => todo!(),
+            asm::Instruction::AllocateStack(_) => todo!(),
         };
     }
     return b;
 }
 
-fn emit_operand(operand: Operand) -> String {
+fn emit_operand(operand: asm::Operand) -> String {
     match operand {
-        Operand::Imm(i) => format!("${}", i),
-        Operand::Register(register) => match register {
-            Register::AX => String::from("%eax"),
+        asm::Operand::Imm(i) => format!("${}", i),
+        asm::Operand::Register(register) => match register {
+            asm::Register::AX => String::from("%eax"),
             _ => todo!(),
         },
-        Operand::Pseudo(_) => todo!(),
-        Operand::Stack(_) => todo!(),
+        asm::Operand::Pseudo(_) => todo!(),
+        asm::Operand::Stack(_) => todo!(),
     }
 }
