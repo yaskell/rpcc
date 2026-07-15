@@ -34,6 +34,14 @@ pub enum UnaryOp {
     Negate,
 }
 
+fn consume(expected: Token, tokens: &mut Vec<Token>) {
+    let actual = tokens.remove(0);
+    if actual != expected {
+        panic!(
+            "Syntax error: expected token '{:?}' did not match actual token '{:?}'",
+            expected, actual
+        )
+    }
 }
 
 pub fn parse(tokens: &mut Vec<Token>) -> Program {
@@ -45,13 +53,25 @@ pub fn parse(tokens: &mut Vec<Token>) -> Program {
     result
 }
 
-fn consume(expected: Token, tokens: &mut Vec<Token>) {
-    let actual = tokens.remove(0);
-    if actual != expected {
-        panic!(
-            "Syntax error: expected token '{:?}' did not match actual token '{:?}'",
-            expected, actual
-        )
+fn parse_function(tokens: &mut Vec<Token>) -> Function {
+    consume(Token::Int, tokens);
+    let identifier = parse_identifier(tokens);
+    consume(Token::OpenParan, tokens);
+    consume(Token::Void, tokens);
+    consume(Token::CloseParan, tokens);
+    consume(Token::OpenBrace, tokens);
+    let statement = parse_statement(tokens);
+    consume(Token::CloseBrace, tokens);
+    Function {
+        name: identifier,
+        body: statement,
+    }
+}
+
+fn parse_identifier(tokens: &mut Vec<Token>) -> Identifier {
+    match tokens.remove(0) {
+        Token::Identifier(x) => x,
+        value => panic!("Syntax error: expected <Identifier>, found: '{:?}'", value),
     }
 }
 
@@ -80,28 +100,6 @@ fn parse_expression(tokens: &mut Vec<Token>) -> Expression {
     }
 }
 
-fn parse_identifier(tokens: &mut Vec<Token>) -> Identifier {
-    match tokens.remove(0) {
-        Token::Identifier(x) => x,
-        value => panic!("Syntax error: expected <Identifier>, found: '{:?}'", value),
-    }
-}
-
 fn parse_int(int: i32) -> Int {
     int
-}
-
-fn parse_function(tokens: &mut Vec<Token>) -> Function {
-    consume(Token::Int, tokens);
-    let identifier_val = parse_identifier(tokens);
-    consume(Token::OpenParan, tokens);
-    consume(Token::Void, tokens);
-    consume(Token::CloseParan, tokens);
-    consume(Token::OpenBrace, tokens);
-    let statement_val = parse_statement(tokens);
-    consume(Token::CloseBrace, tokens);
-    Function {
-        name: identifier_val,
-        body: statement_val,
-    }
 }
