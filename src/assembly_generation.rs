@@ -1,5 +1,9 @@
 use crate::parser;
 
+pub type Identifier = String;
+
+pub type Int = i32;
+
 #[derive(Debug)]
 pub struct ASMProgram {
     pub function_definition: ASMFunctionDefinition,
@@ -13,6 +17,8 @@ pub struct ASMFunctionDefinition {
 
 #[derive(Debug)]
 pub enum Instruction {
+    Unary(UnaryOp, Operand),
+    AllocateStack(Int),
     Move(Move),
     Ret,
 }
@@ -24,14 +30,23 @@ pub struct Move {
 }
 
 #[derive(Debug)]
+pub enum UnaryOp {
+    Neg,
+    Not,
+}
+
+#[derive(Debug)]
 pub enum Operand {
     Imm(i32),
     Register(Register),
+    Pseudo(Identifier),
+    Stack(Int),
 }
 
 #[derive(Debug)]
 pub enum Register {
-    EAX,
+    AX,
+    R10,
 }
 
 pub fn translate_program(program: parser::Program) -> ASMProgram {
@@ -58,7 +73,7 @@ fn translate_statement(statement: parser::Statement) -> Vec<Instruction> {
         parser::Statement::Return(expression) => vec![
             Instruction::Move(Move {
                 src: translate_expression(expression),
-                dst: Operand::Register(Register::EAX),
+                dst: Operand::Register(Register::AX),
             }),
             Instruction::Ret,
         ],
