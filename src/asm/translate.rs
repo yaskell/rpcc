@@ -24,13 +24,13 @@ fn translate_instruction(instructions: Vec<tacky::Instruction>) -> Vec<asm::Inst
                 }));
                 asm_instructions.push(asm::Instruction::Ret)
             }
-            tacky::Instruction::Unary(uop, src, dst) => {
+            tacky::Instruction::Unary(unary_op, src, dst) => {
                 asm_instructions.push(asm::Instruction::Move(asm::MoveInstruction {
                     src: translate_val(src),
                     dst: translate_val(dst),
                 }));
                 asm_instructions.push(asm::Instruction::Unary(asm::UnaryInstruction {
-                    op: translate_unary_operator(uop),
+                    op: translate_unary_op(unary_op),
                     operand: translate_val(dst),
                 }))
             }
@@ -47,9 +47,9 @@ fn translate_val(val: &tacky::Val) -> asm::Operand {
     }
 }
 
-fn translate_unary_operator(unary_op: &tacky::UnaryOperator) -> asm::UnaryOp {
+fn translate_unary_op(unary_op: &tacky::UnaryOp) -> asm::UnaryOp {
     match unary_op {
-        tacky::UnaryOperator::Complement => asm::UnaryOp::Not,
-        tacky::UnaryOperator::Negate => asm::UnaryOp::Neg,
+        tacky::UnaryOp::Complement => asm::UnaryOp::Not,
+        tacky::UnaryOp::Negate => asm::UnaryOp::Neg,
     }
 }

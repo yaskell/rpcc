@@ -19,7 +19,7 @@ pub struct Function {
 #[derive(Debug)]
 pub enum Instruction {
     Return(Val),
-    Unary(UnaryOperator, Src, Dst),
+    Unary(UnaryOp, Src, Dst),
 }
 
 #[derive(Debug)]
@@ -29,7 +29,7 @@ pub enum Val {
 }
 
 #[derive(Debug)]
-pub enum UnaryOperator {
+pub enum UnaryOp {
     Complement,
     Negate,
 }
@@ -70,18 +70,18 @@ fn translate_expression(
 ) -> Val {
     match expression {
         parser::Expression::Constant(int) => return Val::Constant(int),
-        parser::Expression::Unary(unary_operator, expression) => {
+        parser::Expression::Unary(unary_op, expression) => {
             let src = translate_expression(*expression, instructions, i + 1);
             let dst = format!("tmp.{i}");
 
-            match unary_operator {
-                parser::UnaryOperator::Complement => instructions.push(Instruction::Unary(
-                    UnaryOperator::Complement,
+            match unary_op {
+                parser::UnaryOp::Complement => instructions.push(Instruction::Unary(
+                    UnaryOp::Complement,
                     src,
                     Val::Var(dst.to_string()),
                 )),
-                parser::UnaryOperator::Negate => instructions.push(Instruction::Unary(
-                    UnaryOperator::Negate,
+                parser::UnaryOp::Negate => instructions.push(Instruction::Unary(
+                    UnaryOp::Negate,
                     src,
                     Val::Var(dst.to_string()),
                 )),

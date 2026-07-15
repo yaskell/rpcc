@@ -25,11 +25,11 @@ pub enum Statement {
 #[derive(Debug, Clone)]
 pub enum Expression {
     Constant(Int),
-    Unary(UnaryOperator, Box<Expression>),
+    Unary(UnaryOp, Box<Expression>),
 }
 
 #[derive(Debug, Clone)]
-pub enum UnaryOperator {
+pub enum UnaryOp {
     Complement,
     Negate,
 }
@@ -69,13 +69,8 @@ fn parse_statement(tokens: &mut Vec<Token>) -> Statement {
 fn parse_expression(tokens: &mut Vec<Token>) -> Expression {
     match tokens.remove(0) {
         Token::Constant(x) => Expression::Constant(parse_int(x)),
-        Token::Tilde => Expression::Unary(
-            UnaryOperator::Complement,
-            Box::new(parse_expression(tokens)),
-        ),
-        Token::Minus => {
-            Expression::Unary(UnaryOperator::Negate, Box::new(parse_expression(tokens)))
-        }
+        Token::Tilde => Expression::Unary(UnaryOp::Complement, Box::new(parse_expression(tokens))),
+        Token::Minus => Expression::Unary(UnaryOp::Negate, Box::new(parse_expression(tokens))),
         Token::OpenParan => {
             let inner_expression = parse_expression(tokens);
             consume(Token::CloseParan, tokens);
