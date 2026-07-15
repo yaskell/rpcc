@@ -7,11 +7,11 @@ type Dst = Val;
 
 #[derive(Debug)]
 pub struct Program {
-    pub function_definition: FunctionDefinition,
+    pub function: Function,
 }
 
 #[derive(Debug)]
-pub struct FunctionDefinition {
+pub struct Function {
     pub identifier: Identifier,
     pub body: Vec<Instruction>,
 }
@@ -36,16 +36,14 @@ pub enum UnaryOperator {
 
 pub fn translate_program(program: parser::Program) -> Program {
     Program {
-        function_definition: translate_function_definition(program.function_definition),
+        function: translate_function(program.function),
     }
 }
 
-fn translate_function_definition(
-    function_definition: parser::FunctionDefinition,
-) -> FunctionDefinition {
-    FunctionDefinition {
-        identifier: translate_identifier(function_definition.name),
-        body: translate_statement(function_definition.body),
+fn translate_function(function: parser::Function) -> Function {
+    Function {
+        identifier: translate_identifier(function.name),
+        body: translate_statement(function.body),
     }
 }
 

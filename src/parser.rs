@@ -4,11 +4,11 @@ use crate::lexer::Token;
 
 #[derive(Debug, Clone)]
 pub struct Program {
-    pub function_definition: FunctionDefinition,
+    pub function: Function,
 }
 
 #[derive(Debug, Clone)]
-pub struct FunctionDefinition {
+pub struct Function {
     pub name: Identifier,
     pub body: Statement,
 }
@@ -41,7 +41,7 @@ pub fn parse(tokens: &mut Vec<Token>) -> Program {
 fn parse_program(tokens: &mut Vec<Token>) -> Program {
     let function_val = parse_function(tokens);
     let result = Program {
-        function_definition: function_val,
+        function: function_val,
     };
     if !tokens.is_empty() {
         panic!("Error: unexpected token '{:?} at end of program'", tokens)
@@ -96,7 +96,7 @@ fn parse_int(int: i32) -> Int {
     int
 }
 
-fn parse_function(tokens: &mut Vec<Token>) -> FunctionDefinition {
+fn parse_function(tokens: &mut Vec<Token>) -> Function {
     consume(Token::Int, tokens);
     let identifier_val = parse_identifier(tokens);
     consume(Token::OpenParan, tokens);
@@ -105,7 +105,7 @@ fn parse_function(tokens: &mut Vec<Token>) -> FunctionDefinition {
     consume(Token::OpenBrace, tokens);
     let statement_val = parse_statement(tokens);
     consume(Token::CloseBrace, tokens);
-    FunctionDefinition {
+    Function {
         name: identifier_val,
         body: statement_val,
     }

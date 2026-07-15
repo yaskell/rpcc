@@ -1,17 +1,17 @@
-use crate::asm::{self, FunctionDefinition, Instruction, Operand, Program, Register};
+use crate::asm::{self, Function, Instruction, Operand, Program, Register};
 use std::fs;
 
 pub fn emit(program_name: &str, program: Program) -> std::io::Result<()> {
     let mut buffer = String::new();
 
-    buffer.push_str(emit_function(program.function_definition).as_str());
+    buffer.push_str(emit_function(program.function).as_str());
 
     buffer.push_str("    .section .note.GNU-stack,\"\",@progbits");
     fs::write(format!("{}.s", program_name), buffer)?;
     Ok(())
 }
 
-fn emit_function(fun: FunctionDefinition) -> String {
+fn emit_function(fun: Function) -> String {
     return format!(
         "    .globl {}\n{}:\n{}",
         fun.name,

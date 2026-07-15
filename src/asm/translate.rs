@@ -2,16 +2,14 @@ use crate::{asm, tacky};
 
 pub fn translate_program(program: tacky::Program) -> asm::Program {
     asm::Program {
-        function_definition: translate_function_definition(program.tacky_function_definition),
+        function: translate_function(program.function),
     }
 }
 
-fn translate_function_definition(
-    function_definition: tacky::FunctionDefinition,
-) -> asm::FunctionDefinition {
-    asm::FunctionDefinition {
-        name: function_definition.identifier,
-        instructions: translate_instruction(function_definition.body),
+fn translate_function(function: tacky::Function) -> asm::Function {
+    asm::Function {
+        name: function.identifier,
+        instructions: translate_instruction(function.body),
     }
 }
 

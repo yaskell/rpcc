@@ -8,11 +8,11 @@ pub type Int = i32;
 
 #[derive(Debug)]
 pub struct Program {
-    pub function_definition: FunctionDefinition,
+    pub function: Function,
 }
 
 #[derive(Debug)]
-pub struct FunctionDefinition {
+pub struct Function {
     pub name: String,
     pub instructions: Vec<Instruction>,
 }
