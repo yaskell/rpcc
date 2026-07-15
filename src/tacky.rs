@@ -22,7 +22,7 @@ pub enum Instruction {
     Unary(UnaryOp, Src, Dst),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Val {
     Constant(Int),
     Var(Identifier),
@@ -72,21 +72,17 @@ fn translate_expression(
         parser::Expression::Constant(int) => return Val::Constant(int),
         parser::Expression::Unary(unary_op, expression) => {
             let src = translate_expression(*expression, instructions, i + 1);
-            let dst = format!("tmp.{i}");
+            let dst = Val::Var(format!("tmp.{i}").to_string());
 
             match unary_op {
-                parser::UnaryOp::Complement => instructions.push(Instruction::Unary(
-                    UnaryOp::Complement,
-                    src,
-                    Val::Var(dst.to_string()),
-                )),
-                parser::UnaryOp::Negate => instructions.push(Instruction::Unary(
-                    UnaryOp::Negate,
-                    src,
-                    Val::Var(dst.to_string()),
-                )),
+                parser::UnaryOp::Complement => {
+                    instructions.push(Instruction::Unary(UnaryOp::Complement, src, dst.clone()))
+                }
+                parser::UnaryOp::Negate => {
+                    instructions.push(Instruction::Unary(UnaryOp::Negate, src, dst.clone()))
+                }
             }
-            return Val::Var(dst.to_string());
+            return dst;
         }
     }
 }
