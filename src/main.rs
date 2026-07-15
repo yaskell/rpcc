@@ -33,15 +33,17 @@ fn main() {
         process::exit(0);
     }
 
-    let asm_program = asm::translate_program(tacky_ir);
+    let program = asm::translate_program(tacky_ir);
+    let program = asm::replace_pseudo_registers(program);
+
     if let Some(Flag::Codegen) = arguments.flag {
         println!("Stopped before code emission");
-        println!("Assembly Generation: {:?}", &asm_program);
+        println!("Assembly Generation: {:?}", &program);
         process::exit(0);
     }
 
     let filename = &arguments.file_path.trim_end_matches(".c");
-    if let Ok(_) = code_emission::emit(filename, asm_program) {
+    if let Ok(_) = code_emission::emit(filename, program) {
         process::Command::new("gcc")
             .args([format!("{}.s", filename).as_str(), "-o", filename])
             .output()

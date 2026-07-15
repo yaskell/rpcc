@@ -1,5 +1,7 @@
+pub mod replace_pseudo;
 pub mod translate;
 
+pub use replace_pseudo::replace_pseudo_registers;
 pub use translate::translate_program;
 
 pub type Identifier = String;
