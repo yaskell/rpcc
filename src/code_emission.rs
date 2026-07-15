@@ -24,16 +24,11 @@ fn emit_instructions(instructions: Vec<asm::Instruction>) -> String {
     let mut b = String::new();
     for instruction in instructions {
         match instruction {
-            asm::Instruction::Move(m) => b.push_str(
-                format!(
-                    "    movl    {}, {}\n",
-                    emit_operand(m.src),
-                    emit_operand(m.dst)
-                )
-                .as_str(),
+            asm::Instruction::Move { src, dst } => b.push_str(
+                format!("    movl    {}, {}\n", emit_operand(src), emit_operand(dst)).as_str(),
             ),
             asm::Instruction::Ret => b.push_str("    ret\n"),
-            asm::Instruction::Unary(asm::UnaryInstruction { op, operand }) => todo!(),
+            asm::Instruction::Unary { op, operand } => todo!(),
             asm::Instruction::AllocateStack(_) => todo!(),
         };
     }

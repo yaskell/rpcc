@@ -18,21 +18,21 @@ fn translate_instruction(instructions: Vec<tacky::Instruction>) -> Vec<asm::Inst
     for val in instructions.iter() {
         match val {
             tacky::Instruction::Return(val) => {
-                asm_instructions.push(asm::Instruction::Move(asm::MoveInstruction {
+                asm_instructions.push(asm::Instruction::Move {
                     src: translate_val(val),
                     dst: asm::Operand::Register(asm::Register::AX),
-                }));
+                });
                 asm_instructions.push(asm::Instruction::Ret)
             }
-            tacky::Instruction::Unary(unary_op, src, dst) => {
-                asm_instructions.push(asm::Instruction::Move(asm::MoveInstruction {
+            tacky::Instruction::Unary { op, src, dst } => {
+                asm_instructions.push(asm::Instruction::Move {
                     src: translate_val(src),
                     dst: translate_val(dst),
-                }));
-                asm_instructions.push(asm::Instruction::Unary(asm::UnaryInstruction {
-                    op: translate_unary_op(unary_op),
+                });
+                asm_instructions.push(asm::Instruction::Unary {
+                    op: translate_unary_op(op),
                     operand: translate_val(dst),
-                }))
+                })
             }
         }
     }

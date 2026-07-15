@@ -21,22 +21,10 @@ pub struct Function {
 
 #[derive(Debug)]
 pub enum Instruction {
-    Unary(UnaryInstruction),
+    Unary { op: UnaryOp, operand: Operand },
     AllocateStack(Int),
-    Move(MoveInstruction),
+    Move { src: Operand, dst: Operand },
     Ret,
-}
-
-#[derive(Debug)]
-pub struct MoveInstruction {
-    pub src: Operand,
-    pub dst: Operand,
-}
-
-#[derive(Debug)]
-pub struct UnaryInstruction {
-    pub op: UnaryOp,
-    pub operand: Operand,
 }
 
 #[derive(Debug)]

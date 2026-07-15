@@ -2,8 +2,6 @@ use crate::parser;
 
 type Identifier = String;
 type Int = i32;
-type Src = Val;
-type Dst = Val;
 
 #[derive(Debug)]
 pub struct Program {
@@ -19,7 +17,7 @@ pub struct Function {
 #[derive(Debug)]
 pub enum Instruction {
     Return(Val),
-    Unary(UnaryOp, Src, Dst),
+    Unary { op: UnaryOp, src: Val, dst: Val },
 }
 
 #[derive(Debug, Clone)]
@@ -70,17 +68,21 @@ fn translate_expression(
 ) -> Val {
     match expression {
         parser::Expression::Constant(int) => return Val::Constant(int),
-        parser::Expression::Unary(unary_op, expression) => {
-            let src = translate_expression(*expression, instructions, i + 1);
+        parser::Expression::Unary { operator, operand } => {
+            let src = translate_expression(*operand, instructions, i + 1);
             let dst = Val::Var(format!("tmp.{i}").to_string());
 
-            match unary_op {
-                parser::UnaryOp::Complement => {
-                    instructions.push(Instruction::Unary(UnaryOp::Complement, src, dst.clone()))
-                }
-                parser::UnaryOp::Negate => {
-                    instructions.push(Instruction::Unary(UnaryOp::Negate, src, dst.clone()))
-                }
+            match operator {
+                parser::UnaryOp::Complement => instructions.push(Instruction::Unary {
+                    op: UnaryOp::Complement,
+                    src,
+                    dst: dst.clone(),
+                }),
+                parser::UnaryOp::Negate => instructions.push(Instruction::Unary {
+                    op: UnaryOp::Negate,
+                    src,
+                    dst: dst.clone(),
+                }),
             }
             return dst;
         }
