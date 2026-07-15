@@ -26,14 +26,14 @@ fn main() {
         process::exit(0);
     }
 
-    let tacky_val = tacky::translate_program(parsed_val.clone());
+    let tacky_val = tacky::translate_program(parsed_val);
     if let Some(Flag::Tacky) = arguments.flag {
         println!("Stopped before generating assembly, ran tacky compilation pass");
         println!("Parsed file contents: {:?}", &tacky_val);
         process::exit(0);
     }
 
-    let asm_generation_val = assembly_generation::translate_program(parsed_val);
+    let asm_generation_val = assembly_generation::translate_program(tacky_val);
     if let Some(Flag::Codegen) = arguments.flag {
         println!("Stopped before code emission");
         println!("Assembly Generation: {:?}", &asm_generation_val);

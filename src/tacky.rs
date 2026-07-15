@@ -3,17 +3,17 @@ use crate::parser;
 type Identifier = String;
 type Int = i32;
 type Src = Val;
-type Dst = Identifier; //Dst must always be a temporary Var
+type Dst = Val;
 
 #[derive(Debug)]
 pub struct TackyProgram {
-    tacky_function_definition: TackyFunctionDefinition,
+    pub tacky_function_definition: TackyFunctionDefinition,
 }
 
 #[derive(Debug)]
 pub struct TackyFunctionDefinition {
-    identifier: Identifier,
-    body: Vec<Instruction>,
+    pub identifier: Identifier,
+    pub body: Vec<Instruction>,
 }
 
 #[derive(Debug)]
@@ -80,12 +80,12 @@ fn translate_expression(
                 parser::UnaryOperator::Complement => instructions.push(Instruction::Unary(
                     UnaryOperator::Complement,
                     src,
-                    dst.to_string(),
+                    Val::Var(dst.to_string()),
                 )),
                 parser::UnaryOperator::Negate => instructions.push(Instruction::Unary(
                     UnaryOperator::Negate,
                     src,
-                    dst.to_string(),
+                    Val::Var(dst.to_string()),
                 )),
             }
             return Val::Var(dst.to_string());

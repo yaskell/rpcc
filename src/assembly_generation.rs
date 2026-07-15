@@ -1,4 +1,4 @@
-use crate::parser;
+use crate::tacky::{self, UnaryOperator};
 
 pub type Identifier = String;
 
@@ -49,44 +49,58 @@ pub enum Register {
     R10,
 }
 
-pub fn translate_program(program: parser::Program) -> ASMProgram {
+pub fn translate_program(program: tacky::TackyProgram) -> ASMProgram {
     ASMProgram {
-        function_definition: translate_function_definition(program.function_definition),
+        function_definition: translate_function_definition(program.tacky_function_definition),
     }
 }
 
 fn translate_function_definition(
-    function_definition: parser::FunctionDefinition,
+    function_definition: tacky::TackyFunctionDefinition,
 ) -> ASMFunctionDefinition {
     ASMFunctionDefinition {
-        name: translate_identifier(function_definition.name),
-        instructions: translate_statement(function_definition.body),
+        name: function_definition.identifier,
+        instructions: translate_instruction(function_definition.body),
     }
 }
 
-fn translate_identifier(identifier: parser::Identifier) -> String {
-    identifier
+fn translate_instruction(instructions: Vec<tacky::Instruction>) -> Vec<Instruction> {
+    let mut asm_instructions = Vec::new();
+    for val in instructions.iter() {
+        match val {
+            tacky::Instruction::Return(val) => {
+                asm_instructions.push(Instruction::Move(Move {
+                    src: translate_val(val),
+                    dst: Operand::Register(Register::AX),
+                }));
+                asm_instructions.push(Instruction::Ret)
+            }
+            tacky::Instruction::Unary(uop, src, dst) => {
+                asm_instructions.push(Instruction::Move(Move {
+                    src: translate_val(src),
+                    dst: translate_val(dst),
+                }));
+                asm_instructions.push(Instruction::Unary(
+                    translate_unary_operator(uop),
+                    translate_val(dst),
+                ))
+            }
+        }
+    }
+    asm_instructions
 }
 
-fn translate_statement(statement: parser::Statement) -> Vec<Instruction> {
-    match statement {
-        parser::Statement::Return(expression) => vec![
-            Instruction::Move(Move {
-                src: translate_expression(expression),
-                dst: Operand::Register(Register::AX),
-            }),
-            Instruction::Ret,
-        ],
+//FIXME
+fn translate_val(val: &tacky::Val) -> Operand {
+    match val {
+        tacky::Val::Constant(c) => Operand::Imm(c.clone()),
+        tacky::Val::Var(v) => Operand::Pseudo(v.clone()),
     }
 }
 
-fn translate_expression(expression: parser::Expression) -> Operand {
-    match expression {
-        parser::Expression::Constant(int) => translate_int(int),
-        _ => todo!(),
+fn translate_unary_operator(unary_op: &UnaryOperator) -> UnaryOp {
+    match unary_op {
+        UnaryOperator::Complement => UnaryOp::Not,
+        UnaryOperator::Negate => UnaryOp::Neg,
     }
-}
-
-fn translate_int(int: parser::Int) -> Operand {
-    Operand::Imm(int)
 }

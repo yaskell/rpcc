@@ -35,6 +35,8 @@ fn emit_instructions(instructions: Vec<Instruction>) -> String {
                 .as_str(),
             ),
             Instruction::Ret => b.push_str("    ret\n"),
+            Instruction::Unary(unary_op, operand) => todo!(),
+            Instruction::AllocateStack(_) => todo!(),
         };
     }
     return b;
@@ -44,7 +46,10 @@ fn emit_operand(operand: Operand) -> String {
     match operand {
         Operand::Imm(i) => format!("${}", i),
         Operand::Register(register) => match register {
-            Register::EAX => String::from("%eax"),
+            Register::AX => String::from("%eax"),
+            _ => todo!(),
         },
+        Operand::Pseudo(_) => todo!(),
+        Operand::Stack(_) => todo!(),
     }
 }
