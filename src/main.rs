@@ -12,37 +12,36 @@ fn main() {
     let arguments = Arguments::new(&env::args().collect::<Vec<String>>());
     let file_content = fs::read_to_string(&arguments.file_path).expect("Could not read file");
 
-    let lexed_val = lexer::lex(file_content);
+    let mut tokens = lexer::lex(file_content);
     if let Some(Flag::Lex) = arguments.flag {
         println!("Stopped before parsing");
-        println!("Lexed file contents: {:?}", &lexed_val);
+        println!("Lexed file contents: {:?}", &tokens);
         process::exit(0);
     }
 
-    let parsed_val = parser::parse(&mut lexed_val.clone());
+    let ast = parser::parse(&mut tokens);
     if let Some(Flag::Parse) = arguments.flag {
         println!("Stopped before generating assembly");
-        println!("Parsed file contents: {:?}", &parsed_val);
+        println!("Parsed file contents: {:?}", &ast);
         process::exit(0);
     }
 
-    let tacky_val = tacky::translate_program(parsed_val);
+    let tacky_ir = tacky::translate_program(ast);
     if let Some(Flag::Tacky) = arguments.flag {
         println!("Stopped before generating assembly, ran tacky compilation pass");
-        println!("Parsed file contents: {:?}", &tacky_val);
+        println!("Parsed file contents: {:?}", &tacky_ir);
         process::exit(0);
     }
 
-    let asm_generation_val = asm::translate_program(tacky_val);
-
+    let asm_program = asm::translate_program(tacky_ir);
     if let Some(Flag::Codegen) = arguments.flag {
         println!("Stopped before code emission");
-        println!("Assembly Generation: {:?}", &asm_generation_val);
+        println!("Assembly Generation: {:?}", &asm_program);
         process::exit(0);
     }
 
     let filename = &arguments.file_path.trim_end_matches(".c");
-    if let Ok(_) = code_emission::emit(filename, asm_generation_val) {
+    if let Ok(_) = code_emission::emit(filename, asm_program) {
         process::Command::new("gcc")
             .args([format!("{}.s", filename).as_str(), "-o", filename])
             .output()
