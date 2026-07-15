@@ -6,12 +6,12 @@ type Src = Val;
 type Dst = Val;
 
 #[derive(Debug)]
-pub struct TackyProgram {
-    pub tacky_function_definition: TackyFunctionDefinition,
+pub struct Program {
+    pub function_definition: FunctionDefinition,
 }
 
 #[derive(Debug)]
-pub struct TackyFunctionDefinition {
+pub struct FunctionDefinition {
     pub identifier: Identifier,
     pub body: Vec<Instruction>,
 }
@@ -34,16 +34,16 @@ pub enum UnaryOperator {
     Negate,
 }
 
-pub fn translate_program(program: parser::Program) -> TackyProgram {
-    TackyProgram {
-        tacky_function_definition: translate_function_definition(program.function_definition),
+pub fn translate_program(program: parser::Program) -> Program {
+    Program {
+        function_definition: translate_function_definition(program.function_definition),
     }
 }
 
 fn translate_function_definition(
     function_definition: parser::FunctionDefinition,
-) -> TackyFunctionDefinition {
-    TackyFunctionDefinition {
+) -> FunctionDefinition {
+    FunctionDefinition {
         identifier: translate_identifier(function_definition.name),
         body: translate_statement(function_definition.body),
     }

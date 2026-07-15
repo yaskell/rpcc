@@ -1,9 +1,7 @@
-use crate::assembly_generation::{
-    ASMFunctionDefinition, ASMProgram, Instruction, Operand, Register,
-};
+use crate::asm::{self, FunctionDefinition, Instruction, Operand, Program, Register};
 use std::fs;
 
-pub fn emit(program_name: &str, program: ASMProgram) -> std::io::Result<()> {
+pub fn emit(program_name: &str, program: Program) -> std::io::Result<()> {
     let mut buffer = String::new();
 
     buffer.push_str(emit_function(program.function_definition).as_str());
@@ -13,7 +11,7 @@ pub fn emit(program_name: &str, program: ASMProgram) -> std::io::Result<()> {
     Ok(())
 }
 
-fn emit_function(fun: ASMFunctionDefinition) -> String {
+fn emit_function(fun: FunctionDefinition) -> String {
     return format!(
         "    .globl {}\n{}:\n{}",
         fun.name,
@@ -35,7 +33,7 @@ fn emit_instructions(instructions: Vec<Instruction>) -> String {
                 .as_str(),
             ),
             Instruction::Ret => b.push_str("    ret\n"),
-            Instruction::Unary(unary_op, operand) => todo!(),
+            Instruction::Unary(asm::UnaryInstruction { op, operand }) => todo!(),
             Instruction::AllocateStack(_) => todo!(),
         };
     }

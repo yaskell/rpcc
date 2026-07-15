@@ -1,4 +1,4 @@
-mod assembly_generation;
+mod asm;
 mod code_emission;
 mod lexer;
 mod parser;
@@ -33,7 +33,8 @@ fn main() {
         process::exit(0);
     }
 
-    let asm_generation_val = assembly_generation::translate_program(tacky_val);
+    let asm_generation_val = asm::translate_program(tacky_val);
+
     if let Some(Flag::Codegen) = arguments.flag {
         println!("Stopped before code emission");
         println!("Assembly Generation: {:?}", &asm_generation_val);
