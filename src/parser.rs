@@ -34,15 +34,11 @@ pub enum UnaryOp {
     Negate,
 }
 
-pub fn parse(tokens: &mut Vec<Token>) -> Program {
-    parse_program(tokens)
 }
 
-fn parse_program(tokens: &mut Vec<Token>) -> Program {
-    let function_val = parse_function(tokens);
-    let result = Program {
-        function: function_val,
-    };
+pub fn parse(tokens: &mut Vec<Token>) -> Program {
+    let function = parse_function(tokens);
+    let result = Program { function };
     if !tokens.is_empty() {
         panic!("Error: unexpected token '{:?} at end of program'", tokens)
     }
