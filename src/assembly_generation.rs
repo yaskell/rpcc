@@ -17,16 +17,22 @@ pub struct ASMFunctionDefinition {
 
 #[derive(Debug)]
 pub enum Instruction {
-    Unary(UnaryOp, Operand),
+    Unary(UnaryInstruction),
     AllocateStack(Int),
-    Move(Move),
+    Move(MoveInstruction),
     Ret,
 }
 
 #[derive(Debug)]
-pub struct Move {
+pub struct MoveInstruction {
     pub src: Operand,
     pub dst: Operand,
+}
+
+#[derive(Debug)]
+pub struct UnaryInstruction {
+    pub op: UnaryOp,
+    pub operand: Operand,
 }
 
 #[derive(Debug)]
@@ -69,21 +75,21 @@ fn translate_instruction(instructions: Vec<tacky::Instruction>) -> Vec<Instructi
     for val in instructions.iter() {
         match val {
             tacky::Instruction::Return(val) => {
-                asm_instructions.push(Instruction::Move(Move {
+                asm_instructions.push(Instruction::Move(MoveInstruction {
                     src: translate_val(val),
                     dst: Operand::Register(Register::AX),
                 }));
                 asm_instructions.push(Instruction::Ret)
             }
             tacky::Instruction::Unary(uop, src, dst) => {
-                asm_instructions.push(Instruction::Move(Move {
+                asm_instructions.push(Instruction::Move(MoveInstruction {
                     src: translate_val(src),
                     dst: translate_val(dst),
                 }));
-                asm_instructions.push(Instruction::Unary(
-                    translate_unary_operator(uop),
-                    translate_val(dst),
-                ))
+                asm_instructions.push(Instruction::Unary(UnaryInstruction {
+                    op: translate_unary_operator(uop),
+                    operand: translate_val(dst),
+                }))
             }
         }
     }
