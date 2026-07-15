@@ -60,10 +60,14 @@ fn consume(expected: Token, tokens: &mut Vec<Token>) {
 }
 
 fn parse_statement(tokens: &mut Vec<Token>) -> Statement {
-    consume(Token::Return, tokens);
-    let return_val = parse_expression(tokens);
-    consume(Token::Semicolon, tokens);
-    Statement::Return(return_val)
+    match tokens.remove(0) {
+        Token::Return => {
+            let expression = parse_expression(tokens);
+            consume(Token::Semicolon, tokens);
+            return Statement::Return(expression);
+        }
+        value => panic!("Syntax error: expected <return>, found: '{:?}'", value),
+    }
 }
 
 fn parse_expression(tokens: &mut Vec<Token>) -> Expression {
