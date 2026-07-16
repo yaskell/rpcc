@@ -137,7 +137,7 @@ pub fn lex(mut file: String) -> Vec<Token> {
             Some(capture) => {
                 let token_type = captured_token.unwrap();
 
-                match token_type {
+                tokens.push(match token_type {
                     Token::Identifier(_) => {
                         let text = capture.as_str();
 
@@ -151,28 +151,15 @@ pub fn lex(mut file: String) -> Vec<Token> {
                         }
                     }
 
-                    Token::Constant(_) => {
-                        tokens.push(Token::Constant(
-                            capture
-                                .as_str()
-                                .parse::<i32>()
-                                .expect("Could not convert to i32"),
-                        ));
-                    }
+                    Token::Constant(_) => Token::Constant(
+                        capture
+                            .as_str()
+                            .parse::<i32>()
+                            .expect("Could not convert to i32"),
+                    ),
 
-                    Token::OpenParan => tokens.push(Token::OpenParan),
-                    Token::CloseParan => tokens.push(Token::CloseParan),
-                    Token::OpenBrace => tokens.push(Token::OpenBrace),
-                    Token::CloseBrace => tokens.push(Token::CloseBrace),
-                    Token::Semicolon => tokens.push(Token::Semicolon),
-                    Token::Minus => tokens.push(Token::Minus),
-                    Token::DoubleMinus => tokens.push(Token::DoubleMinus),
-                    Token::Tilde => tokens.push(Token::Tilde),
-
-                    Token::Int => tokens.push(Token::Int),
-                    Token::Void => tokens.push(Token::Void),
-                    Token::Return => tokens.push(Token::Return),
-                }
+                    token => token.clone(),
+                });
 
                 file = file[capture.end()..].to_string();
             }
