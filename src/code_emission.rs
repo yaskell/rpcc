@@ -1,14 +1,13 @@
 use crate::asm;
-use std::fs;
 
-pub fn emit(program_name: &str, program: asm::Program) -> std::io::Result<()> {
+pub fn emit(program: asm::Program) -> String {
     let mut buffer = String::new();
 
     buffer.push_str(emit_function(program.function).as_str());
 
     buffer.push_str("    .section .note.GNU-stack,\"\",@progbits");
-    fs::write(format!("{}.s", program_name), buffer)?;
-    Ok(())
+
+    buffer
 }
 
 fn emit_function(fun: asm::Function) -> String {

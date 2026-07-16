@@ -33,18 +33,18 @@ fn main() {
         process::exit(0);
     }
 
-    let program = asm::translate_program(tacky_ir);
-    let (program, offset) = asm::replace_pseudo_registers(program);
-    let program = asm::fix_program(program, offset);
-
+    let asm_ast = asm::translate_program(tacky_ir);
+    let (asm_ast, offset) = asm::replace_pseudo_registers(asm_ast);
+    let asm_ast = asm::fix_program(asm_ast, offset);
     if let Some(Flag::Codegen) = arguments.flag {
         println!("Stopped before code emission");
-        println!("Assembly Generation: {:?}", &program);
+        println!("Assembly Generation: {:?}", &asm_ast);
         process::exit(0);
     }
 
+    let program = code_emission::emit(asm_ast);
     let filename = &arguments.file_path.trim_end_matches(".c");
-    if let Ok(_) = code_emission::emit(filename, program) {
+    if let Ok(_) = fs::write(format!("{}.s", filename), program) {
         process::Command::new("gcc")
             .args([format!("{}.s", filename).as_str(), "-o", filename])
             .output()
