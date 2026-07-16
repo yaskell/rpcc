@@ -27,21 +27,23 @@ impl StackAllocator {
     }
 }
 
-pub fn replace_pseudo_registers(program: asm::Program) -> asm::Program {
-    asm::Program {
-        function: replace_function(program.function),
-    }
+pub fn replace_pseudo_registers(program: asm::Program) -> (asm::Program, i32) {
+    let mut allocator = StackAllocator::new();
+    (
+        asm::Program {
+            function: replace_function(program.function, &mut allocator),
+        },
+        (allocator.next_offset + 4).abs(),
+    )
 }
 
-fn replace_function(function: asm::Function) -> asm::Function {
-    let mut allocator = StackAllocator::new();
-
+fn replace_function(function: asm::Function, allocator: &mut StackAllocator) -> asm::Function {
     asm::Function {
         name: function.name,
         instructions: function
             .instructions
             .into_iter()
-            .map(|instruction| replace_instruction(instruction, &mut allocator))
+            .map(|instruction| replace_instruction(instruction, allocator))
             .collect(),
     }
 }

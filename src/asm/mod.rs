@@ -1,6 +1,8 @@
+pub mod fix_instruction;
 pub mod replace_pseudo;
 pub mod translate;
 
+pub use fix_instruction::fix_program;
 pub use replace_pseudo::replace_pseudo_registers;
 pub use translate::translate_program;
 

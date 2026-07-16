@@ -34,7 +34,8 @@ fn main() {
     }
 
     let program = asm::translate_program(tacky_ir);
-    let program = asm::replace_pseudo_registers(program);
+    let (program, offset) = asm::replace_pseudo_registers(program);
+    let program = asm::fix_program(program, offset);
 
     if let Some(Flag::Codegen) = arguments.flag {
         println!("Stopped before code emission");
