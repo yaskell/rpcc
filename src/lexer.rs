@@ -21,13 +21,32 @@ pub enum Token {
     Return,
 }
 
+impl Token {
+    fn new(token_value: regex::Match, token_type: &Token) -> Token {
+        match token_type {
+            Token::Identifier(_) => KEYWORD_TOKENS_DEFINITIONS
+                .iter()
+                .find(|kw| kw.regex.is_match(token_value.as_str()))
+                .map(|kw| kw.token_type.clone())
+                .unwrap_or_else(|| Token::Identifier(token_value.as_str().to_string())),
+            Token::Constant(_) => Token::Constant(
+                token_value
+                    .as_str()
+                    .parse::<i32>()
+                    .expect("Could not convert to i32"),
+            ),
+            token => token.clone(),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct TokenDefinition {
     pub token_type: Token,
     pub regex: Regex,
 }
 
-pub static KEYWORD_TOKENS: LazyLock<Vec<TokenDefinition>> = LazyLock::new(|| {
+pub static KEYWORD_TOKENS_DEFINITIONS: LazyLock<Vec<TokenDefinition>> = LazyLock::new(|| {
     vec![
         TokenDefinition {
             token_type: Token::Int,
@@ -44,7 +63,7 @@ pub static KEYWORD_TOKENS: LazyLock<Vec<TokenDefinition>> = LazyLock::new(|| {
     ]
 });
 
-pub static OTHER_TOKENS: LazyLock<Vec<TokenDefinition>> = LazyLock::new(|| {
+pub static OTHER_TOKENS_DEFINITIONS: LazyLock<Vec<TokenDefinition>> = LazyLock::new(|| {
     vec![
         TokenDefinition {
             token_type: Token::Identifier("".to_string()),
@@ -89,86 +108,61 @@ pub static OTHER_TOKENS: LazyLock<Vec<TokenDefinition>> = LazyLock::new(|| {
     ]
 });
 
-pub fn lex(mut file: String) -> Vec<Token> {
-    let mut tokens: Vec<Token> = Vec::new();
+#[derive(Debug)]
+struct Capture<'a> {
+    value: regex::Match<'a>,
+    token_type: &'a Token,
+}
+
+pub fn lex(mut file: &str) -> Vec<Token> {
+    let mut tokens = Vec::new();
 
     while !file.is_empty() {
         if file.starts_with(char::is_whitespace) {
-            file = file.trim_start().to_string();
+            file = file.trim_start();
             continue;
         }
 
-        let mut longest_capture: Option<regex::Match> = None;
-        let mut captured_token: Option<&Token> = None;
-
-        for token in OTHER_TOKENS.iter() {
-            if let Some(captured) = token.regex.find(&file) {
-                match &longest_capture {
-                    None => {
-                        longest_capture = Some(captured);
-                        captured_token = Some(&token.token_type);
-                    }
-                    Some(existing) => {
-                        if captured.len() > existing.len() {
-                            longest_capture = Some(captured);
-                            captured_token = Some(&token.token_type);
-                        }
-                    }
-                }
-            }
+        if let Some(comment) = check_if_comment(file) {
+            file = &file[comment.end()..];
+            continue;
         }
 
-        let Some(capture) = longest_capture else {
-            match check_if_comment(&file) {
-                Some(x) => {
-                    file = file[x.end()..].to_string();
-                    continue;
-                }
-                None => {
-                    let start_to_first_word_boundary = Regex::new(r"^[\s\S]*?(?:\b|$)").unwrap();
-                    eprintln!(
-                        "Invalid token: \"{}\"",
-                        start_to_first_word_boundary.find(&file).unwrap().as_str()
-                    );
-                    process::exit(1);
-                }
+        match find_longest_match(file) {
+            Some(m) => {
+                tokens.push(Token::new(m.value, m.token_type));
+                file = &file[m.value.end()..];
             }
-        };
-
-        tokens.push(create_token(capture, captured_token));
-        file = file[capture.end()..].to_string();
+            None => {
+                let invalid_token = file.split_whitespace().next().unwrap_or(file);
+                eprintln!("Invalid token: \"{invalid_token}\"");
+                process::exit(1);
+            }
+        }
     }
     tokens
 }
 
-fn create_token(longest_capture: regex::Match, captured_token: Option<&Token>) -> Token {
-    let token_type = captured_token.unwrap();
+fn find_longest_match<'a>(file: &'a str) -> Option<Capture<'a>> {
+    let mut longest_capture: Option<Capture<'a>> = None;
 
-    let token = match token_type {
-        Token::Identifier(_) => {
-            let text = longest_capture.as_str();
-
-            KEYWORD_TOKENS
-                .iter()
-                .find(|kw| kw.regex.is_match(text))
-                .map(|kw| kw.token_type.clone())
-                .unwrap_or_else(|| Token::Identifier(text.to_string()))
+    for token_definition in OTHER_TOKENS_DEFINITIONS.iter() {
+        if let Some(capture) = token_definition.regex.find(file) {
+            if longest_capture
+                .as_ref()
+                .is_none_or(|current_longest| capture.len() > current_longest.value.len())
+            {
+                longest_capture = Some(Capture {
+                    value: capture,
+                    token_type: &token_definition.token_type,
+                });
+            }
         }
-
-        Token::Constant(_) => Token::Constant(
-            longest_capture
-                .as_str()
-                .parse::<i32>()
-                .expect("Could not convert to i32"),
-        ),
-
-        token => token.clone(),
-    };
-
-    token
+    }
+    longest_capture
 }
 
-fn check_if_comment(file: &String) -> Option<Match<'_>> {
+fn check_if_comment(file: &str) -> Option<Match<'_>> {
     let single_line_comment = Regex::new(r"//[^\r\n]*").unwrap();
     let multi_line_comment = Regex::new(r"\/\*[\s\S]*? \*\/").unwrap();
 

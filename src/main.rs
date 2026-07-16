@@ -12,7 +12,7 @@ fn main() {
     let arguments = Arguments::new(&env::args().collect::<Vec<String>>());
     let file_content = fs::read_to_string(&arguments.file_path).expect("Could not read file");
 
-    let mut tokens = lexer::lex(file_content);
+    let mut tokens = lexer::lex(&file_content);
     if let Some(Flag::Lex) = arguments.flag {
         println!("Stopped before parsing");
         println!("Lexed file contents: {:?}", &tokens);
