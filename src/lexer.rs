@@ -141,14 +141,11 @@ pub fn lex(mut file: String) -> Vec<Token> {
                     Token::Identifier(_) => {
                         let text = capture.as_str();
 
-                        let keyword_match =
-                            KEYWORD_TOKENS.iter().find(|kw| kw.regex.is_match(text));
-
-                        if let Some(kw) = keyword_match {
-                            tokens.push(kw.token_type.clone());
-                        } else {
-                            tokens.push(Token::Identifier(text.to_string()));
-                        }
+                        KEYWORD_TOKENS
+                            .iter()
+                            .find(|kw| kw.regex.is_match(text))
+                            .map(|kw| kw.token_type.clone())
+                            .unwrap_or_else(|| Token::Identifier(text.to_string()))
                     }
 
                     Token::Constant(_) => Token::Constant(
