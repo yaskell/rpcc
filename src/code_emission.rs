@@ -13,7 +13,13 @@ pub fn emit(program_name: &str, program: asm::Program) -> std::io::Result<()> {
 
 fn emit_function(fun: asm::Function) -> String {
     return format!(
-        "    .globl {}\n{}:\n{}",
+        "    .globl {}
+  {}:
+    pushq   %rbp
+    movq    %rsp, %rbp
+    {}
+
+",
         fun.name,
         fun.name,
         emit_instructions(fun.instructions)
@@ -27,9 +33,17 @@ fn emit_instructions(instructions: Vec<asm::Instruction>) -> String {
             asm::Instruction::Move { src, dst } => b.push_str(
                 format!("    movl    {}, {}\n", emit_operand(src), emit_operand(dst)).as_str(),
             ),
-            asm::Instruction::Ret => b.push_str("    ret\n"),
-            asm::Instruction::Unary { op, operand } => todo!(),
-            asm::Instruction::AllocateStack(_) => todo!(),
+            asm::Instruction::Ret => b.push_str(
+                "    movq    %rbp, %rsp
+    popq    %rbp
+    ret",
+            ),
+            asm::Instruction::Unary { op, operand } => b.push_str(
+                format!("    {}    {}\n", emit_unary_op(op), emit_operand(operand)).as_str(),
+            ),
+            asm::Instruction::AllocateStack(i) => {
+                b.push_str(format!("subq    ${i}, %rsp\n").as_str())
+            }
         };
     }
     return b;
@@ -37,12 +51,21 @@ fn emit_instructions(instructions: Vec<asm::Instruction>) -> String {
 
 fn emit_operand(operand: asm::Operand) -> String {
     match operand {
-        asm::Operand::Imm(i) => format!("${}", i),
+        asm::Operand::Imm(i) => format!("${i}"),
+        asm::Operand::Stack(i) => format!("{i}(%rbp)"),
         asm::Operand::Register(register) => match register {
             asm::Register::AX => String::from("%eax"),
-            _ => todo!(),
+            asm::Register::R10 => String::from("%r10d"),
         },
-        asm::Operand::Pseudo(_) => todo!(),
-        asm::Operand::Stack(_) => todo!(),
+        asm::Operand::Pseudo(_) => {
+            unreachable!("All pseudo registers should've been replaced during assembly generation")
+        }
+    }
+}
+
+fn emit_unary_op(op: asm::UnaryOp) -> String {
+    match op {
+        asm::UnaryOp::Neg => String::from("negl"),
+        asm::UnaryOp::Not => String::from("notl"),
     }
 }
