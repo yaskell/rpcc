@@ -8,6 +8,8 @@ assembler and linker.
 **Current Features**:
 
 - Bare minimum: Can compile a main function that returns an integer.
+- Unary operators: Supports the negation (`-`) and bitwise complement (`~`)
+  operators that operate on a single value.
 
 ## Get started
 
