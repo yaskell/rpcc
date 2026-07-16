@@ -118,8 +118,8 @@ pub fn lex(mut file: String) -> Vec<Token> {
             }
         }
 
-        match longest_capture {
-            None => match check_if_comment(&file) {
+        let Some(capture) = longest_capture else {
+            match check_if_comment(&file) {
                 Some(x) => {
                     file = file[x.end()..].to_string();
                     continue;
@@ -132,38 +132,40 @@ pub fn lex(mut file: String) -> Vec<Token> {
                     );
                     process::exit(1);
                 }
-            },
-
-            Some(capture) => {
-                let token_type = captured_token.unwrap();
-
-                tokens.push(match token_type {
-                    Token::Identifier(_) => {
-                        let text = capture.as_str();
-
-                        KEYWORD_TOKENS
-                            .iter()
-                            .find(|kw| kw.regex.is_match(text))
-                            .map(|kw| kw.token_type.clone())
-                            .unwrap_or_else(|| Token::Identifier(text.to_string()))
-                    }
-
-                    Token::Constant(_) => Token::Constant(
-                        capture
-                            .as_str()
-                            .parse::<i32>()
-                            .expect("Could not convert to i32"),
-                    ),
-
-                    token => token.clone(),
-                });
-
-                file = file[capture.end()..].to_string();
             }
-        }
-    }
+        };
 
+        tokens.push(create_token(capture, captured_token));
+        file = file[capture.end()..].to_string();
+    }
     tokens
+}
+
+fn create_token(longest_capture: regex::Match, captured_token: Option<&Token>) -> Token {
+    let token_type = captured_token.unwrap();
+
+    let token = match token_type {
+        Token::Identifier(_) => {
+            let text = longest_capture.as_str();
+
+            KEYWORD_TOKENS
+                .iter()
+                .find(|kw| kw.regex.is_match(text))
+                .map(|kw| kw.token_type.clone())
+                .unwrap_or_else(|| Token::Identifier(text.to_string()))
+        }
+
+        Token::Constant(_) => Token::Constant(
+            longest_capture
+                .as_str()
+                .parse::<i32>()
+                .expect("Could not convert to i32"),
+        ),
+
+        token => token.clone(),
+    };
+
+    token
 }
 
 fn check_if_comment(file: &String) -> Option<Match<'_>> {
