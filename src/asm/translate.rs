@@ -34,6 +34,12 @@ fn translate_instruction(instructions: Vec<tacky::Instruction>) -> Vec<asm::Inst
                     operand: translate_val(dst),
                 })
             }
+            tacky::Instruction::Binary {
+                op,
+                left,
+                right,
+                dst,
+            } => todo!(),
         }
     }
     asm_instructions

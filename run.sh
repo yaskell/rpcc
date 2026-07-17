@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-cargo run ../return.c && (
-    ../return
+cargo run ./return.c && (
+    ./return
     echo $?
 )
