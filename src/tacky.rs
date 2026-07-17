@@ -64,43 +64,58 @@ fn translate_statement(
     statement: parser::Statement,
     tva: &mut TemporaryVarAllocator,
 ) -> Vec<Instruction> {
-    let mut instructions = Vec::new();
-    match statement {
-        parser::Statement::Return(expression) => {
-            let value = translate_expression(expression, &mut instructions, tva);
-            instructions.push(Instruction::Return(value))
-        }
-    };
-    instructions
+    todo!()
 }
 
+// fn translate_statement(
+//     statement: parser::Statement,
+//     tva: &mut TemporaryVarAllocator,
+// ) -> Vec<Instruction> {
+//     let mut instructions = Vec::new();
+//     match statement {
+//         parser::Statement::Return(expression) => {
+//             let value = translate_expression(expression, &mut instructions, tva);
+//             instructions.push(Instruction::Return(value))
+//         }
+//     };
+//     instructions
+// }
+
 fn translate_expression(
-    expression: parser::Expression,
+    expression: parser::Factor,
     instructions: &mut Vec<Instruction>,
     tva: &mut TemporaryVarAllocator,
 ) -> Val {
-    match expression {
-        parser::Expression::Constant(int) => Val::Constant(int),
-        parser::Expression::Unary { operator, operand } => {
-            let dst = Val::Var(format!("tmp.{}", tva.count).to_string());
-            let src = {
-                tva.count += 1;
-                translate_expression(*operand, instructions, tva)
-            };
-
-            match operator {
-                parser::UnaryOp::Complement => instructions.push(Instruction::Unary {
-                    op: UnaryOp::Complement,
-                    src,
-                    dst: dst.clone(),
-                }),
-                parser::UnaryOp::Negate => instructions.push(Instruction::Unary {
-                    op: UnaryOp::Negate,
-                    src,
-                    dst: dst.clone(),
-                }),
-            }
-            dst
-        }
-    }
+    todo!()
 }
+
+// fn translate_expression(
+//     expression: parser::Factor,
+//     instructions: &mut Vec<Instruction>,
+//     tva: &mut TemporaryVarAllocator,
+// ) -> Val {
+//     match expression {
+//         parser::Factor::Constant(int) => Val::Constant(int),
+//         parser::Factor::Unary { operator, operand } => {
+//             let dst = Val::Var(format!("tmp.{}", tva.count).to_string());
+//             let src = {
+//                 tva.count += 1;
+//                 translate_expression(*operand, instructions, tva)
+//             };
+//
+//             match operator {
+//                 parser::UnaryOp::Complement => instructions.push(Instruction::Unary {
+//                     op: UnaryOp::Complement,
+//                     src,
+//                     dst: dst.clone(),
+//                 }),
+//                 parser::UnaryOp::Negate => instructions.push(Instruction::Unary {
+//                     op: UnaryOp::Negate,
+//                     src,
+//                     dst: dst.clone(),
+//                 }),
+//             }
+//             dst
+//         }
+//     }
+// }

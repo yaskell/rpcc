@@ -2,12 +2,12 @@ use std::panic;
 
 use crate::lexer::Token;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Program {
     pub function: Function,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Function {
     pub name: Identifier,
     pub body: Statement,
@@ -17,13 +17,23 @@ pub type Identifier = String;
 
 pub type Int = i32;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum Statement {
     Return(Expression),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum Expression {
+    Factor(Factor),
+    Binary {
+        operator: BinaryOp,
+        left_expression: Box<Expression>,
+        right_expression: Box<Expression>,
+    },
+}
+
+#[derive(Debug)]
+pub enum Factor {
     Constant(Int),
     Unary {
         operator: UnaryOp,
@@ -31,7 +41,36 @@ pub enum Expression {
     },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
+pub enum BinaryOp {
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Remainder,
+}
+
+impl BinaryOp {
+    fn precedence(&self) -> u8 {
+        match self {
+            BinaryOp::Multiply | BinaryOp::Divide | BinaryOp::Remainder => 50,
+            BinaryOp::Add | BinaryOp::Subtract => 45,
+        }
+    }
+
+    fn from_token(token: &Token) -> Option<Self> {
+        match token {
+            Token::Plus => Some(BinaryOp::Add),
+            Token::Minus => Some(BinaryOp::Subtract),
+            Token::Asterisk => Some(BinaryOp::Multiply),
+            Token::ForwardSlash => Some(BinaryOp::Divide),
+            Token::Percent => Some(BinaryOp::Remainder),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub enum UnaryOp {
     Complement,
     Negate,
@@ -81,7 +120,7 @@ fn parse_identifier(tokens: &mut Vec<Token>) -> Identifier {
 fn parse_statement(tokens: &mut Vec<Token>) -> Statement {
     match tokens.remove(0) {
         Token::Return => {
-            let expression = parse_expression(tokens);
+            let expression = parse_expression(tokens, 0);
             consume(Token::Semicolon, tokens);
             return Statement::Return(expression);
         }
@@ -89,23 +128,56 @@ fn parse_statement(tokens: &mut Vec<Token>) -> Statement {
     }
 }
 
-fn parse_expression(tokens: &mut Vec<Token>) -> Expression {
-    match tokens.remove(0) {
-        Token::Constant(x) => Expression::Constant(parse_int(x)),
-        Token::Tilde => Expression::Unary {
-            operator: UnaryOp::Complement,
-            operand: Box::new(parse_expression(tokens)),
-        },
-        Token::Minus => Expression::Unary {
-            operator: UnaryOp::Negate,
-            operand: Box::new(parse_expression(tokens)),
-        },
-        Token::OpenParan => {
-            let inner_expression = parse_expression(tokens);
-            consume(Token::CloseParan, tokens);
-            return inner_expression;
+fn parse_expression(tokens: &mut Vec<Token>, min_prec: u8) -> Expression {
+    let mut left = parse_factor(tokens);
+
+    while let Some(op) = peek_binary_op(tokens) {
+        let prec = BinaryOp::precedence(&op);
+        if prec < min_prec {
+            break;
         }
-        value => panic!("Malformed expression: '{:?}'", value),
+
+        parse_binary_op(tokens);
+
+        let right = parse_expression(tokens, prec + 1);
+
+        left = Expression::Binary {
+            operator: op,
+            left_expression: Box::new(left),
+            right_expression: Box::new(right),
+        };
+    }
+
+    left
+}
+
+fn peek_binary_op(tokens: &Vec<Token>) -> Option<BinaryOp> {
+    tokens.first().and_then(BinaryOp::from_token)
+}
+
+fn parse_binary_op(tokens: &mut Vec<Token>) -> BinaryOp {
+    let token = tokens.remove(0);
+    BinaryOp::from_token(&token)
+        .unwrap_or_else(|| panic!("Expected binary operator, found '{:?}'", token))
+}
+
+fn parse_factor(tokens: &mut Vec<Token>) -> Expression {
+    match tokens.remove(0) {
+        Token::Constant(i) => Expression::Factor(Factor::Constant(parse_int(i))),
+        Token::Minus => Expression::Factor(Factor::Unary {
+            operator: UnaryOp::Negate,
+            operand: Box::new(parse_factor(tokens)),
+        }),
+        Token::Tilde => Expression::Factor(Factor::Unary {
+            operator: UnaryOp::Complement,
+            operand: Box::new(parse_factor(tokens)),
+        }),
+        Token::OpenParan => {
+            let expr = parse_expression(tokens, 0);
+            consume(Token::CloseParan, tokens);
+            expr
+        }
+        token => panic!("Malformed factor: {:?}", token),
     }
 }
 
