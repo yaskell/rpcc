@@ -163,8 +163,8 @@ fn find_longest_match<'a>(file: &'a str) -> Option<Capture<'a>> {
 }
 
 fn check_if_comment(file: &str) -> Option<Match<'_>> {
-    let single_line_comment = Regex::new(r"//[^\r\n]*").unwrap();
-    let multi_line_comment = Regex::new(r"\/\*[\s\S]*? \*\/").unwrap();
+    let single_line_comment = Regex::new(r"^//[^\r\n]*").unwrap();
+    let multi_line_comment = Regex::new(r"^\/\*[\s\S]*? \*\/").unwrap();
 
     if let Some(x) = single_line_comment.find(&file) {
         return Some(x);
