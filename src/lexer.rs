@@ -19,6 +19,10 @@ pub enum Token {
     Int,
     Void,
     Return,
+    Plus,
+    Asterisk,
+    ForwardSlash,
+    Percent,
 }
 
 impl Token {
@@ -104,6 +108,22 @@ pub static OTHER_TOKENS_DEFINITIONS: LazyLock<Vec<TokenDefinition>> = LazyLock::
         TokenDefinition {
             token_type: Token::Tilde,
             regex: Regex::new(r"^~").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::Plus,
+            regex: Regex::new(r"^\+").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::Asterisk,
+            regex: Regex::new(r"^\*").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::ForwardSlash,
+            regex: Regex::new(r"^/").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::Percent,
+            regex: Regex::new(r"^%").unwrap(),
         },
     ]
 });
