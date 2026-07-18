@@ -61,7 +61,15 @@ fn replace_instruction(
             src: replace_operand(src, allocator),
             dst: replace_operand(dst, allocator),
         },
-        other => other,
+        asm::Instruction::Binary { op, left, right } => asm::Instruction::Binary {
+            op,
+            left: replace_operand(left, allocator),
+            right: replace_operand(right, allocator),
+        },
+        asm::Instruction::Idiv(operand) => {
+            asm::Instruction::Idiv(replace_operand(operand, allocator))
+        }
+        instruction_without_operands => instruction_without_operands,
     }
 }
 
