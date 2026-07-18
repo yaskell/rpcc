@@ -23,16 +23,36 @@ pub struct Function {
 
 #[derive(Debug)]
 pub enum Instruction {
-    Unary { op: UnaryOp, operand: Operand },
+    Move {
+        src: Operand,
+        dst: Operand,
+    },
+    Unary {
+        op: UnaryOp,
+        operand: Operand,
+    },
+    Binary {
+        op: BinaryOp,
+        left: Operand,
+        right: Operand,
+    },
     AllocateStack(Int),
-    Move { src: Operand, dst: Operand },
     Ret,
+    Idiv(Operand),
+    Cdq,
 }
 
 #[derive(Debug)]
 pub enum UnaryOp {
     Neg,
     Not,
+}
+
+#[derive(Debug)]
+pub enum BinaryOp {
+    Add,
+    Sub,
+    Mult,
 }
 
 #[derive(Debug)]
@@ -46,5 +66,7 @@ pub enum Operand {
 #[derive(Debug)]
 pub enum Register {
     AX,
+    DX,
     R10,
+    R11,
 }

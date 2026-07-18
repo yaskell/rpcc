@@ -61,8 +61,7 @@ fn replace_instruction(
             src: replace_operand(src, allocator),
             dst: replace_operand(dst, allocator),
         },
-        asm::Instruction::AllocateStack(size) => asm::Instruction::AllocateStack(size),
-        asm::Instruction::Ret => asm::Instruction::Ret,
+        other => other,
     }
 }
 

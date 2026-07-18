@@ -43,6 +43,9 @@ fn emit_instructions(instructions: Vec<asm::Instruction>) -> String {
             asm::Instruction::AllocateStack(i) => {
                 b.push_str(format!("subq    ${i}, %rsp\n").as_str())
             }
+            asm::Instruction::Binary { op, left, right } => todo!(),
+            asm::Instruction::Idiv(operand) => todo!(),
+            asm::Instruction::Cdq => todo!(),
         };
     }
     return b;
@@ -55,6 +58,8 @@ fn emit_operand(operand: asm::Operand) -> String {
         asm::Operand::Register(register) => match register {
             asm::Register::AX => String::from("%eax"),
             asm::Register::R10 => String::from("%r10d"),
+            asm::Register::DX => todo!(),
+            asm::Register::R11 => todo!(),
         },
         asm::Operand::Pseudo(_) => {
             unreachable!("All pseudo registers should've been replaced during assembly generation")

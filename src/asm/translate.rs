@@ -1,5 +1,7 @@
 use crate::{asm, tacky};
 
+//NOTE: consider using impl blocks for asm:: structures
+
 pub fn translate_program(program: tacky::Program) -> asm::Program {
     asm::Program {
         function: translate_function(program.function),
@@ -39,7 +41,50 @@ fn translate_instruction(instructions: Vec<tacky::Instruction>) -> Vec<asm::Inst
                 left,
                 right,
                 dst,
-            } => todo!(),
+            } => match &op {
+                tacky::BinaryOp::Divide => {
+                    asm_instructions.push(asm::Instruction::Move {
+                        src: translate_val(left),
+                        dst: asm::Operand::Register(asm::Register::AX),
+                    });
+                    asm_instructions.push(asm::Instruction::Cdq);
+                    asm_instructions.push(asm::Instruction::Idiv(translate_val(right)));
+                    asm_instructions.push(asm::Instruction::Move {
+                        src: asm::Operand::Register(asm::Register::AX),
+                        dst: translate_val(dst),
+                    });
+                }
+                tacky::BinaryOp::Remainder => {
+                    asm_instructions.push(asm::Instruction::Move {
+                        src: translate_val(left),
+                        dst: asm::Operand::Register(asm::Register::AX),
+                    });
+                    asm_instructions.push(asm::Instruction::Cdq);
+                    asm_instructions.push(asm::Instruction::Idiv(translate_val(right)));
+                    asm_instructions.push(asm::Instruction::Move {
+                        src: asm::Operand::Register(asm::Register::DX),
+                        dst: translate_val(dst),
+                    });
+                }
+                _ => {
+                    let op = match &op {
+                        tacky::BinaryOp::Add => asm::BinaryOp::Add,
+                        tacky::BinaryOp::Subtract => asm::BinaryOp::Sub,
+                        tacky::BinaryOp::Multiply => asm::BinaryOp::Mult,
+                        _ => unreachable!("Other operators should've matched another super branch"),
+                    };
+
+                    asm_instructions.push(asm::Instruction::Move {
+                        src: translate_val(left),
+                        dst: translate_val(dst.clone()),
+                    });
+                    asm_instructions.push(asm::Instruction::Binary {
+                        op: op,
+                        left: translate_val(right),
+                        right: translate_val(dst),
+                    });
+                }
+            },
         }
     }
     asm_instructions
