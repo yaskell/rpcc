@@ -21,8 +21,12 @@ pub fn fix_function(function: asm::Function, offset: i32) -> asm::Function {
 }
 
 pub fn fix_instruction(instruction: asm::Instruction) -> Vec<asm::Instruction> {
-    if let asm::Instruction::Move { src, dst } = instruction {
-        if let (asm::Operand::Stack(_), asm::Operand::Stack(_)) = (&src, &dst) {
+    match instruction {
+        // Move can't have memory addresses as both src and dst
+        asm::Instruction::Move {
+            src: src @ asm::Operand::Stack(_),
+            dst: dst @ asm::Operand::Stack(_),
+        } => {
             vec![
                 asm::Instruction::Move {
                     src,
@@ -33,10 +37,59 @@ pub fn fix_instruction(instruction: asm::Instruction) -> Vec<asm::Instruction> {
                     dst,
                 },
             ]
-        } else {
-            vec![asm::Instruction::Move { src, dst }]
         }
-    } else {
-        vec![instruction]
+        // add and sub instructions can't operate on two memory addresses
+        asm::Instruction::Binary {
+            op: op @ (asm::BinaryOp::Add | asm::BinaryOp::Sub),
+            left: left @ asm::Operand::Stack(_),
+            right: right @ asm::Operand::Stack(_),
+        } => {
+            vec![
+                asm::Instruction::Move {
+                    src: left,
+                    dst: asm::Operand::Register(asm::Register::R10),
+                },
+                asm::Instruction::Binary {
+                    op,
+                    left: asm::Operand::Register(asm::Register::R10),
+                    right,
+                },
+            ]
+        }
+        // idiv can't operate on immediate values
+        asm::Instruction::Idiv(asm::Operand::Imm(i)) => {
+            vec![
+                asm::Instruction::Move {
+                    src: asm::Operand::Imm(i),
+                    dst: asm::Operand::Register(asm::Register::R10),
+                },
+                asm::Instruction::Idiv(asm::Operand::Register(asm::Register::R10)),
+            ]
+        }
+        // imul can't use a memory address as its destination
+        asm::Instruction::Binary {
+            op: asm::BinaryOp::Mult,
+            left,
+            right: right @ asm::Operand::Stack(_),
+        } => {
+            vec![
+                asm::Instruction::Move {
+                    src: right.clone(),
+                    dst: asm::Operand::Register(asm::Register::R11),
+                },
+                asm::Instruction::Binary {
+                    op: asm::BinaryOp::Mult,
+                    left,
+                    right: asm::Operand::Register(asm::Register::R11),
+                },
+                asm::Instruction::Move {
+                    src: asm::Operand::Register(asm::Register::R11),
+                    dst: right,
+                },
+            ]
+        }
+        _ => {
+            vec![instruction]
+        }
     }
 }

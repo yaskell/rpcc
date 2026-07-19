@@ -55,7 +55,7 @@ pub enum BinaryOp {
     Mult,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Operand {
     Imm(i32),
     Register(Register),
@@ -63,7 +63,7 @@ pub enum Operand {
     Stack(Int),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Register {
     AX,
     DX,
