@@ -23,6 +23,15 @@ pub enum Token {
     Asterisk,
     ForwardSlash,
     Percent,
+    Exclamation,
+    DoubleAmpersands,
+    DoubleBar,
+    DoubleEqual,
+    ExclamationEqual,
+    LeftAngleBracket,
+    RightAngleBracket,
+    LeftAngleBracketEqual,
+    RightAngleBracketEqual,
 }
 
 impl Token {
@@ -124,6 +133,42 @@ pub static OTHER_TOKENS_DEFINITIONS: LazyLock<Vec<TokenDefinition>> = LazyLock::
         TokenDefinition {
             token_type: Token::Percent,
             regex: Regex::new(r"^%").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::Exclamation,
+            regex: Regex::new(r"^!").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::DoubleAmpersands,
+            regex: Regex::new(r"^&&").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::DoubleBar,
+            regex: Regex::new(r"^\|\|").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::DoubleEqual,
+            regex: Regex::new(r"^==").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::ExclamationEqual,
+            regex: Regex::new(r"^!=").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::LeftAngleBracket,
+            regex: Regex::new(r"^<").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::RightAngleBracket,
+            regex: Regex::new(r"^>").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::LeftAngleBracketEqual,
+            regex: Regex::new(r"^<=").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::RightAngleBracketEqual,
+            regex: Regex::new(r"^>=").unwrap(),
         },
     ]
 });
