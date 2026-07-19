@@ -1,18 +1,20 @@
 ## About
 
-Toy compiler for a subset of C written in Rust.
+Crust is a toy compiler for a subset of C written in Rust, based on [Writing a C
+Compiler](https://norasandler.com/book/) by Nora Sandler.
 
-Relies (for now) on a compiler driver (GCC) for invoking the preprocessor,
-assembler and linker.
+For the time being, relies on GCC as compiler driver for invoking the
+preprocessor, assembler and linker.
 
-**Current Features**:
+**Features**:
 
 - Bare minimum: Can compile a main function that returns an integer into x64
   assembly.
 - Unary operators: Supports the negation (`-`) and bitwise complement (`~`)
   operators.
-- Binary operators: Supports the addition (`+`), multiplication (`*`),
-  division (`/`) and remainder (`%`) operators.
+- Binary operators: Supports the addition (`+`), multiplication (`*`), division
+  (`/`) and remainder (`%`) operators.
+- ...more features in progress
 
 ## Getting started
 
@@ -21,4 +23,4 @@ Dependencies are managed using `flake.nix`.
 Run `cargo build --release` to build project, executable will be found in
 `target/release`. Run `crust --help` for information on usage.
 
-Use `./run.sh` to run the sample program and automatically print the exit code.
+Use `./run.sh` to run the sample program and automatically print its exit code.
