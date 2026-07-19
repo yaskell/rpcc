@@ -130,10 +130,10 @@ fn usage_message() -> ! {
 Options:
     --lex        Run lexer only and print tokens
     --parse      Run lexer + parser and print AST
+    --tacky      Run tacky compiler pass, stop before assembly generation
     --codegen    Run up to assembly generation and print result
     -S           Emit assembly file (.s) but do not remove it
     --help       Show this help message
-    --tacky      Run tacky compiler pass, stop before assembly generation
 "
     );
     std::process::exit(1);
