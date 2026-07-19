@@ -10,7 +10,24 @@ use std::process;
 
 fn main() {
     let arguments = Arguments::new(&env::args().collect::<Vec<String>>());
-    let file_content = fs::read_to_string(&arguments.file_path).expect("Could not read file");
+    let filename_base = &arguments.file_path.trim_end_matches(".c");
+
+    run_command(
+        "gcc",
+        &[
+            "-E",
+            "-P",
+            &arguments.file_path,
+            "-o",
+            format!("{filename_base}.i").as_str(),
+        ],
+    )
+    .expect("preprocessing failed");
+
+    let file_content =
+        fs::read_to_string(format!("{filename_base}.i")).expect("Could not read file");
+
+    let _ = fs::remove_file(format!("{}.i", filename_base).as_str());
 
     let mut tokens = lexer::lex(&file_content);
     if let Some(Flag::Lex) = arguments.flag {
@@ -43,28 +60,18 @@ fn main() {
     }
 
     let program = code_emission::emit(asm_ast);
-    let filename = &arguments.file_path.trim_end_matches(".c");
-    if let Ok(_) = fs::write(format!("{}.s", filename), program) {
-        match process::Command::new("gcc")
-            .args([format!("{}.s", filename).as_str(), "-o", filename])
-            .output()
-        {
-            Ok(out) => {
-                if !out.status.success() {
-                    eprintln!("gcc failed: {}", out.status);
-                    eprintln!("{}", String::from_utf8_lossy(&out.stderr));
-                }
-            }
-            Err(e) => {
-                eprintln!("failed to run gcc: {e}");
-            }
-        }
+    if let Ok(_) = fs::write(format!("{}.s", filename_base), program) {
+        run_command(
+            "gcc",
+            &[format!("{}.s", filename_base).as_str(), "-o", filename_base],
+        )
+        .expect("Linking failed");
 
         if let Some(Flag::Assembly) = arguments.flag {
             process::exit(0);
         }
 
-        let _ = fs::remove_file(format!("{}.s", filename).as_str());
+        let _ = fs::remove_file(format!("{}.s", filename_base).as_str());
 
         process::exit(0);
     }
@@ -137,4 +144,21 @@ Options:
 "
     );
     std::process::exit(1);
+}
+
+fn run_command(command: &str, args: &[&str]) -> Result<(), String> {
+    let output = process::Command::new(command)
+        .args(args)
+        .output()
+        .map_err(|e| e.to_string())?;
+
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(format!(
+            "{}\n{}",
+            output.status,
+            String::from_utf8_lossy(&output.stderr)
+        ))
+    }
 }
