@@ -11,6 +11,8 @@ assembler and linker.
   assembly.
 - Unary operators: Supports the negation (`-`) and bitwise complement (`~`)
   operators.
+- Binary operators: Supports the addition (`+`), multiplication (`*`),
+  division (`/`) and remainder (`%`) operators.
 
 ## Getting started
 
