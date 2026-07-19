@@ -45,10 +45,20 @@ fn main() {
     let program = code_emission::emit(asm_ast);
     let filename = &arguments.file_path.trim_end_matches(".c");
     if let Ok(_) = fs::write(format!("{}.s", filename), program) {
-        process::Command::new("gcc")
+        match process::Command::new("gcc")
             .args([format!("{}.s", filename).as_str(), "-o", filename])
             .output()
-            .expect("has failed");
+        {
+            Ok(out) => {
+                if !out.status.success() {
+                    eprintln!("gcc failed: {}", out.status);
+                    eprintln!("{}", String::from_utf8_lossy(&out.stderr));
+                }
+            }
+            Err(e) => {
+                eprintln!("failed to run gcc: {e}");
+            }
+        }
 
         if let Some(Flag::Assembly) = arguments.flag {
             process::exit(0);
