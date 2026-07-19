@@ -122,6 +122,7 @@ fn translate_expression(
             right_expression,
         } => {
             let dst = Val::Var(format!("tmp.{}", tva.count).to_string());
+            tva.count += 1;
             let left = translate_expression(*left_expression, instructions, tva);
             let right = translate_expression(*right_expression, instructions, tva);
             let op = translate_binary_op(operator);
