@@ -1,5 +1,3 @@
-use std::panic;
-
 use crate::lexer::Token;
 
 #[derive(Debug)]
@@ -48,6 +46,14 @@ pub enum BinaryOp {
     Multiply,
     Divide,
     Remainder,
+    And,
+    Or,
+    Equal,
+    NotEqual,
+    LessThan,
+    LessOrEqual,
+    GreaterThan,
+    GreaterOrEqual,
 }
 
 impl BinaryOp {
@@ -55,18 +61,33 @@ impl BinaryOp {
         match self {
             BinaryOp::Multiply | BinaryOp::Divide | BinaryOp::Remainder => 50,
             BinaryOp::Add | BinaryOp::Subtract => 45,
+            BinaryOp::LessThan
+            | BinaryOp::LessOrEqual
+            | BinaryOp::GreaterThan
+            | BinaryOp::GreaterOrEqual => 35,
+            BinaryOp::Equal | BinaryOp::NotEqual => 30,
+            BinaryOp::And => 10,
+            BinaryOp::Or => 5,
         }
     }
 
     fn from_token(token: &Token) -> Option<Self> {
-        match token {
-            Token::Plus => Some(BinaryOp::Add),
-            Token::Minus => Some(BinaryOp::Subtract),
-            Token::Asterisk => Some(BinaryOp::Multiply),
-            Token::ForwardSlash => Some(BinaryOp::Divide),
-            Token::Percent => Some(BinaryOp::Remainder),
-            _ => None,
-        }
+        Some(match token {
+            Token::Plus => BinaryOp::Add,
+            Token::Minus => BinaryOp::Subtract,
+            Token::Asterisk => BinaryOp::Multiply,
+            Token::ForwardSlash => BinaryOp::Divide,
+            Token::Percent => BinaryOp::Remainder,
+            Token::DoubleAmpersands => BinaryOp::And,
+            Token::DoubleBar => BinaryOp::Or,
+            Token::DoubleEqual => BinaryOp::Equal,
+            Token::ExclamationEqual => BinaryOp::NotEqual,
+            Token::LeftAngleBracket => BinaryOp::LessThan,
+            Token::RightAngleBracket => BinaryOp::GreaterThan,
+            Token::LeftAngleBracketEqual => BinaryOp::LessOrEqual,
+            Token::RightAngleBracketEqual => BinaryOp::GreaterOrEqual,
+            _ => return None,
+        })
     }
 }
 
@@ -74,6 +95,18 @@ impl BinaryOp {
 pub enum UnaryOp {
     Complement,
     Negate,
+    Not,
+}
+
+impl UnaryOp {
+    fn from_token(token: &Token) -> Option<Self> {
+        Some(match token {
+            Token::Tilde => UnaryOp::Complement,
+            Token::Minus => UnaryOp::Negate,
+            Token::Exclamation => UnaryOp::Not,
+            _ => return None,
+        })
+    }
 }
 
 fn consume(expected: Token, tokens: &mut Vec<Token>) {
@@ -131,18 +164,18 @@ fn parse_statement(tokens: &mut Vec<Token>) -> Statement {
 fn parse_expression(tokens: &mut Vec<Token>, min_prec: u8) -> Expression {
     let mut left = parse_factor(tokens);
 
-    while let Some(op) = peek_binary_op(tokens) {
-        let prec = BinaryOp::precedence(&op);
+    while let Some(binary_op) = tokens.first().and_then(BinaryOp::from_token) {
+        let prec = BinaryOp::precedence(&binary_op);
         if prec < min_prec {
             break;
         }
 
-        parse_binary_op(tokens);
+        tokens.remove(0);
 
         let right = parse_expression(tokens, prec + 1);
 
         left = Expression::Binary {
-            operator: op,
+            operator: binary_op,
             left_expression: Box::new(left),
             right_expression: Box::new(right),
         };
@@ -151,33 +184,24 @@ fn parse_expression(tokens: &mut Vec<Token>, min_prec: u8) -> Expression {
     left
 }
 
-fn peek_binary_op(tokens: &Vec<Token>) -> Option<BinaryOp> {
-    tokens.first().and_then(BinaryOp::from_token)
-}
-
-fn parse_binary_op(tokens: &mut Vec<Token>) -> BinaryOp {
-    let token = tokens.remove(0);
-    BinaryOp::from_token(&token)
-        .unwrap_or_else(|| panic!("Expected binary operator, found '{:?}'", token))
-}
-
 fn parse_factor(tokens: &mut Vec<Token>) -> Expression {
-    match tokens.remove(0) {
-        Token::Constant(i) => Expression::Factor(Factor::Constant(parse_int(i))),
-        Token::Minus => Expression::Factor(Factor::Unary {
-            operator: UnaryOp::Negate,
-            operand: Box::new(parse_factor(tokens)),
-        }),
-        Token::Tilde => Expression::Factor(Factor::Unary {
-            operator: UnaryOp::Complement,
-            operand: Box::new(parse_factor(tokens)),
-        }),
-        Token::OpenParan => {
-            let expr = parse_expression(tokens, 0);
-            consume(Token::CloseParan, tokens);
-            expr
+    match tokens.first().and_then(UnaryOp::from_token) {
+        Some(unary_op) => {
+            tokens.remove(0);
+            Expression::Factor(Factor::Unary {
+                operator: unary_op,
+                operand: Box::new(parse_factor(tokens)),
+            })
         }
-        token => panic!("Malformed factor: {:?}", token),
+        None => match tokens.remove(0) {
+            Token::Constant(i) => Expression::Factor(Factor::Constant(parse_int(i))),
+            Token::OpenParan => {
+                let expr = parse_expression(tokens, 0);
+                consume(Token::CloseParan, tokens);
+                expr
+            }
+            token => panic!("Malformed factor: {:?}", token),
+        },
     }
 }
 

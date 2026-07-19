@@ -143,6 +143,7 @@ fn translate_unary_op(op: parser::UnaryOp) -> UnaryOp {
     match op {
         parser::UnaryOp::Complement => UnaryOp::Complement,
         parser::UnaryOp::Negate => UnaryOp::Negate,
+        parser::UnaryOp::Not => todo!(),
     }
 }
 
@@ -153,5 +154,13 @@ fn translate_binary_op(op: parser::BinaryOp) -> BinaryOp {
         parser::BinaryOp::Multiply => BinaryOp::Multiply,
         parser::BinaryOp::Divide => BinaryOp::Divide,
         parser::BinaryOp::Remainder => BinaryOp::Remainder,
+        parser::BinaryOp::And => todo!(),
+        parser::BinaryOp::Or => todo!(),
+        parser::BinaryOp::Equal => todo!(),
+        parser::BinaryOp::NotEqual => todo!(),
+        parser::BinaryOp::LessThan => todo!(),
+        parser::BinaryOp::LessOrEqual => todo!(),
+        parser::BinaryOp::GreaterThan => todo!(),
+        parser::BinaryOp::GreaterOrEqual => todo!(),
     }
 }
