@@ -38,6 +38,22 @@ pub enum Instruction {
         right: Val,
         dst: Val,
     },
+    Copy {
+        src: Val,
+        dst: Val,
+    },
+    Jump {
+        target: Identifier,
+    },
+    JumpIfZero {
+        condition: Val,
+        target: Identifier,
+    },
+    JumpIfNotZero {
+        condition: Val,
+        target: Identifier,
+    },
+    Label(Identifier),
 }
 
 #[derive(Debug, Clone)]
@@ -50,6 +66,7 @@ pub enum Val {
 pub enum UnaryOp {
     Complement,
     Negate,
+    Not,
 }
 
 #[derive(Debug)]
@@ -59,6 +76,12 @@ pub enum BinaryOp {
     Multiply,
     Divide,
     Remainder,
+    Equal,
+    NotEqual,
+    LessThan,
+    LessOrEqual,
+    GreaterThan,
+    GreaterOrEqual,
 }
 
 pub fn translate_program(program: parser::Program) -> Program {
@@ -120,22 +143,120 @@ fn translate_expression(
             operator,
             left_expression,
             right_expression,
-        } => {
-            let dst = Val::Var(format!("tmp.{}", tva.count).to_string());
-            tva.count += 1;
-            let left = translate_expression(*left_expression, instructions, tva);
-            let right = translate_expression(*right_expression, instructions, tva);
-            let op = translate_binary_op(operator);
+        } => match operator {
+            parser::BinaryOp::And => {
+                let dst = Val::Var(format!("tmp.{}", tva.count).to_string());
+                tva.count += 1;
 
-            instructions.push(Instruction::Binary {
-                op,
-                left,
-                right,
-                dst: dst.clone(),
-            });
+                let left = translate_expression(*left_expression, instructions, tva);
+                instructions.push(Instruction::JumpIfZero {
+                    condition: left,
+                    target: String::from(format!("and_false{}", tva.count)),
+                });
 
-            dst
-        }
+                let right = translate_expression(*right_expression, instructions, tva);
+                instructions.push(Instruction::JumpIfZero {
+                    condition: right,
+                    target: String::from(format!("and_false{}", tva.count)),
+                });
+
+                instructions.push(Instruction::Copy {
+                    src: Val::Constant(1),
+                    dst: dst.clone(),
+                });
+
+                instructions.push(Instruction::Jump {
+                    target: String::from(format!("and_end{}", tva.count)),
+                });
+
+                instructions.push(Instruction::Label(String::from(format!(
+                    "and_false{}",
+                    tva.count
+                ))));
+
+                instructions.push(Instruction::Copy {
+                    src: Val::Constant(0),
+                    dst: dst.clone(),
+                });
+
+                instructions.push(Instruction::Label(String::from(format!(
+                    "and_end{}",
+                    tva.count
+                ))));
+                dst
+            }
+            parser::BinaryOp::Or => {
+                let dst = Val::Var(format!("tmp.{}", tva.count).to_string());
+                tva.count += 1;
+
+                let left = translate_expression(*left_expression, instructions, tva);
+                instructions.push(Instruction::JumpIfNotZero {
+                    condition: left,
+                    target: String::from(format!("or_false{}", tva.count)),
+                });
+
+                let right = translate_expression(*right_expression, instructions, tva);
+                instructions.push(Instruction::JumpIfNotZero {
+                    condition: right,
+                    target: String::from(format!("or_false{}", tva.count)),
+                });
+
+                instructions.push(Instruction::Copy {
+                    src: Val::Constant(1),
+                    dst: dst.clone(),
+                });
+
+                instructions.push(Instruction::Jump {
+                    target: String::from(format!("or_end{}", tva.count)),
+                });
+
+                instructions.push(Instruction::Label(String::from(format!(
+                    "or_false{}",
+                    tva.count
+                ))));
+
+                instructions.push(Instruction::Copy {
+                    src: Val::Constant(0),
+                    dst: dst.clone(),
+                });
+
+                instructions.push(Instruction::Label(String::from(format!(
+                    "or_end{}",
+                    tva.count
+                ))));
+                dst
+            }
+            other_operator => {
+                let dst = Val::Var(format!("tmp.{}", tva.count).to_string());
+                tva.count += 1;
+                let left = translate_expression(*left_expression, instructions, tva);
+                let right = translate_expression(*right_expression, instructions, tva);
+                let op = match other_operator {
+                    parser::BinaryOp::Add => BinaryOp::Add,
+                    parser::BinaryOp::Subtract => BinaryOp::Subtract,
+                    parser::BinaryOp::Multiply => BinaryOp::Multiply,
+                    parser::BinaryOp::Divide => BinaryOp::Divide,
+                    parser::BinaryOp::Remainder => BinaryOp::Remainder,
+                    parser::BinaryOp::Equal => BinaryOp::Equal,
+                    parser::BinaryOp::NotEqual => BinaryOp::NotEqual,
+                    parser::BinaryOp::LessThan => BinaryOp::LessThan,
+                    parser::BinaryOp::LessOrEqual => BinaryOp::LessOrEqual,
+                    parser::BinaryOp::GreaterThan => BinaryOp::GreaterThan,
+                    parser::BinaryOp::GreaterOrEqual => BinaryOp::GreaterOrEqual,
+                    parser::BinaryOp::And | parser::BinaryOp::Or => {
+                        unreachable!("Should've matched super branch")
+                    }
+                };
+
+                instructions.push(Instruction::Binary {
+                    op,
+                    left,
+                    right,
+                    dst: dst.clone(),
+                });
+                dst
+            }
+        },
     }
 }
 
@@ -143,24 +264,6 @@ fn translate_unary_op(op: parser::UnaryOp) -> UnaryOp {
     match op {
         parser::UnaryOp::Complement => UnaryOp::Complement,
         parser::UnaryOp::Negate => UnaryOp::Negate,
-        parser::UnaryOp::Not => todo!(),
-    }
-}
-
-fn translate_binary_op(op: parser::BinaryOp) -> BinaryOp {
-    match op {
-        parser::BinaryOp::Add => BinaryOp::Add,
-        parser::BinaryOp::Subtract => BinaryOp::Subtract,
-        parser::BinaryOp::Multiply => BinaryOp::Multiply,
-        parser::BinaryOp::Divide => BinaryOp::Divide,
-        parser::BinaryOp::Remainder => BinaryOp::Remainder,
-        parser::BinaryOp::And => todo!(),
-        parser::BinaryOp::Or => todo!(),
-        parser::BinaryOp::Equal => todo!(),
-        parser::BinaryOp::NotEqual => todo!(),
-        parser::BinaryOp::LessThan => todo!(),
-        parser::BinaryOp::LessOrEqual => todo!(),
-        parser::BinaryOp::GreaterThan => todo!(),
-        parser::BinaryOp::GreaterOrEqual => todo!(),
+        parser::UnaryOp::Not => UnaryOp::Not,
     }
 }

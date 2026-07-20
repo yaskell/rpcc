@@ -71,7 +71,15 @@ fn translate_instruction(instructions: Vec<tacky::Instruction>) -> Vec<asm::Inst
                         tacky::BinaryOp::Add => asm::BinaryOp::Add,
                         tacky::BinaryOp::Subtract => asm::BinaryOp::Sub,
                         tacky::BinaryOp::Multiply => asm::BinaryOp::Mult,
-                        _ => unreachable!("Other operators should've matched another super branch"),
+                        tacky::BinaryOp::Equal => todo!(),
+                        tacky::BinaryOp::NotEqual => todo!(),
+                        tacky::BinaryOp::LessThan => todo!(),
+                        tacky::BinaryOp::LessOrEqual => todo!(),
+                        tacky::BinaryOp::GreaterThan => todo!(),
+                        tacky::BinaryOp::GreaterOrEqual => todo!(),
+                        tacky::BinaryOp::Divide | tacky::BinaryOp::Remainder => {
+                            unreachable!("Should've matched super branch")
+                        }
                     };
 
                     asm_instructions.push(asm::Instruction::Move {
@@ -85,6 +93,11 @@ fn translate_instruction(instructions: Vec<tacky::Instruction>) -> Vec<asm::Inst
                     });
                 }
             },
+            tacky::Instruction::Copy { src, dst } => todo!(),
+            tacky::Instruction::Jump { target } => todo!(),
+            tacky::Instruction::JumpIfZero { condition, target } => todo!(),
+            tacky::Instruction::JumpIfNotZero { condition, target } => todo!(),
+            tacky::Instruction::Label(_) => todo!(),
         }
     }
     asm_instructions
@@ -101,5 +114,6 @@ fn translate_unary_op(unary_op: tacky::UnaryOp) -> asm::UnaryOp {
     match unary_op {
         tacky::UnaryOp::Complement => asm::UnaryOp::Not,
         tacky::UnaryOp::Negate => asm::UnaryOp::Neg,
+        tacky::UnaryOp::Not => todo!(),
     }
 }

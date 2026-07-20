@@ -1,1 +1,1 @@
-int main(void) { return 2 * 2 + 3 / 21 % 3; }
+int main(void) { return 2 && 3; }
