@@ -129,7 +129,12 @@ fn translate_expression(
                 tva.count += 1;
                 translate_expression(*operand, instructions, tva)
             };
-            let op = translate_unary_op(operator);
+
+            let op = match operator {
+                parser::UnaryOp::Complement => UnaryOp::Complement,
+                parser::UnaryOp::Negate => UnaryOp::Negate,
+                parser::UnaryOp::Not => UnaryOp::Not,
+            };
 
             instructions.push(Instruction::Unary {
                 op,
@@ -257,13 +262,5 @@ fn translate_expression(
                 dst
             }
         },
-    }
-}
-
-fn translate_unary_op(op: parser::UnaryOp) -> UnaryOp {
-    match op {
-        parser::UnaryOp::Complement => UnaryOp::Complement,
-        parser::UnaryOp::Negate => UnaryOp::Negate,
-        parser::UnaryOp::Not => UnaryOp::Not,
     }
 }
