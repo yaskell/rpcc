@@ -27,14 +27,33 @@ fn translate_instruction(instructions: Vec<tacky::Instruction>) -> Vec<asm::Inst
                 asm_instructions.push(asm::Instruction::Ret)
             }
             tacky::Instruction::Unary { op, src, dst } => {
-                asm_instructions.push(asm::Instruction::Move {
-                    src: translate_val(src),
-                    dst: translate_val(dst.clone()),
-                });
-                asm_instructions.push(asm::Instruction::Unary {
-                    op: translate_unary_op(op),
-                    operand: translate_val(dst),
-                })
+                let dst = translate_val(dst);
+                match op {
+                    tacky::UnaryOp::Complement | tacky::UnaryOp::Negate => {
+                        asm_instructions.push(asm::Instruction::Move {
+                            src: translate_val(src),
+                            dst: dst.clone(),
+                        });
+                        asm_instructions.push(asm::Instruction::Unary {
+                            op: translate_unary_op(op),
+                            operand: dst.clone(),
+                        })
+                    }
+                    tacky::UnaryOp::Not => {
+                        asm_instructions.push(asm::Instruction::Cmp {
+                            left: asm::Operand::Imm(0),
+                            right: translate_val(src),
+                        });
+                        asm_instructions.push(asm::Instruction::Move {
+                            src: asm::Operand::Imm(0),
+                            dst: dst.clone(),
+                        });
+                        asm_instructions.push(asm::Instruction::SetCC {
+                            cond_code: asm::ConditionalCode::E,
+                            operand: dst,
+                        });
+                    }
+                }
             }
             tacky::Instruction::Binary {
                 op,
@@ -66,18 +85,31 @@ fn translate_instruction(instructions: Vec<tacky::Instruction>) -> Vec<asm::Inst
                         dst: translate_val(dst),
                     });
                 }
+                tacky::BinaryOp::Equal
+                | tacky::BinaryOp::NotEqual
+                | tacky::BinaryOp::LessThan
+                | tacky::BinaryOp::LessOrEqual
+                | tacky::BinaryOp::GreaterThan
+                | tacky::BinaryOp::GreaterOrEqual => {
+                    asm_instructions.push(asm::Instruction::Cmp {
+                        left: translate_val(right),
+                        right: translate_val(left),
+                    });
+                    asm_instructions.push(asm::Instruction::Move {
+                        src: asm::Operand::Imm(0),
+                        dst: translate_val(dst.clone()),
+                    });
+                    asm_instructions.push(asm::Instruction::SetCC {
+                        cond_code: translate_condition_code(op),
+                        operand: translate_val(dst),
+                    });
+                }
                 _ => {
                     let op = match &op {
                         tacky::BinaryOp::Add => asm::BinaryOp::Add,
                         tacky::BinaryOp::Subtract => asm::BinaryOp::Sub,
                         tacky::BinaryOp::Multiply => asm::BinaryOp::Mult,
-                        tacky::BinaryOp::Equal => todo!(),
-                        tacky::BinaryOp::NotEqual => todo!(),
-                        tacky::BinaryOp::LessThan => todo!(),
-                        tacky::BinaryOp::LessOrEqual => todo!(),
-                        tacky::BinaryOp::GreaterThan => todo!(),
-                        tacky::BinaryOp::GreaterOrEqual => todo!(),
-                        tacky::BinaryOp::Divide | tacky::BinaryOp::Remainder => {
+                        _ => {
                             unreachable!("Should've matched super branch")
                         }
                     };
@@ -93,11 +125,38 @@ fn translate_instruction(instructions: Vec<tacky::Instruction>) -> Vec<asm::Inst
                     });
                 }
             },
-            tacky::Instruction::Copy { src, dst } => todo!(),
-            tacky::Instruction::Jump { target } => todo!(),
-            tacky::Instruction::JumpIfZero { condition, target } => todo!(),
-            tacky::Instruction::JumpIfNotZero { condition, target } => todo!(),
-            tacky::Instruction::Label(_) => todo!(),
+            tacky::Instruction::Copy { src, dst } => {
+                asm_instructions.push(asm::Instruction::Move {
+                    src: translate_val(src),
+                    dst: translate_val(dst),
+                })
+            }
+            tacky::Instruction::Jump { target } => {
+                asm_instructions.push(asm::Instruction::Jmp(target))
+            }
+            tacky::Instruction::JumpIfZero { condition, target } => {
+                asm_instructions.push(asm::Instruction::Cmp {
+                    left: asm::Operand::Imm(0),
+                    right: translate_val(condition),
+                });
+                asm_instructions.push(asm::Instruction::JmpCC {
+                    cond_code: asm::ConditionalCode::E,
+                    target,
+                });
+            }
+            tacky::Instruction::JumpIfNotZero { condition, target } => {
+                asm_instructions.push(asm::Instruction::Cmp {
+                    left: asm::Operand::Imm(0),
+                    right: translate_val(condition),
+                });
+                asm_instructions.push(asm::Instruction::JmpCC {
+                    cond_code: asm::ConditionalCode::NE,
+                    target,
+                });
+            }
+            tacky::Instruction::Label(identifier) => {
+                asm_instructions.push(asm::Instruction::Label(identifier))
+            }
         }
     }
     asm_instructions
@@ -107,6 +166,18 @@ fn translate_val(val: tacky::Val) -> asm::Operand {
     match val {
         tacky::Val::Constant(c) => asm::Operand::Imm(c),
         tacky::Val::Var(v) => asm::Operand::Pseudo(v),
+    }
+}
+
+fn translate_condition_code(code: tacky::BinaryOp) -> asm::ConditionalCode {
+    match code {
+        tacky::BinaryOp::Equal => asm::ConditionalCode::E,
+        tacky::BinaryOp::NotEqual => asm::ConditionalCode::NE,
+        tacky::BinaryOp::LessThan => asm::ConditionalCode::L,
+        tacky::BinaryOp::LessOrEqual => asm::ConditionalCode::LE,
+        tacky::BinaryOp::GreaterThan => asm::ConditionalCode::G,
+        tacky::BinaryOp::GreaterOrEqual => asm::ConditionalCode::GE,
+        _ => unreachable!("Not a comparison operand"),
     }
 }
 

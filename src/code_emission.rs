@@ -55,6 +55,11 @@ fn emit_instructions(instructions: Vec<asm::Instruction>) -> String {
                 b.push_str(format!("    idivl    {}", emit_operand(operand)).as_str())
             }
             asm::Instruction::Cdq => b.push_str(format!("    cdq").as_str()),
+            asm::Instruction::Cmp { left, right } => todo!(),
+            asm::Instruction::Jmp(_) => todo!(),
+            asm::Instruction::JmpCC { cond_code, target } => todo!(),
+            asm::Instruction::SetCC { cond_code, operand } => todo!(),
+            asm::Instruction::Label(_) => todo!(),
         };
         b.push_str("\n");
     }

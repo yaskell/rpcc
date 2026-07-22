@@ -40,6 +40,30 @@ pub enum Instruction {
     Ret,
     Idiv(Operand),
     Cdq,
+    Cmp {
+        left: Operand,
+        right: Operand,
+    },
+    Jmp(Identifier),
+    JmpCC {
+        cond_code: ConditionalCode,
+        target: Identifier,
+    },
+    SetCC {
+        cond_code: ConditionalCode,
+        operand: Operand,
+    },
+    Label(Identifier),
+}
+
+#[derive(Debug)]
+pub enum ConditionalCode {
+    E,
+    NE,
+    G,
+    GE,
+    L,
+    LE,
 }
 
 #[derive(Debug)]
