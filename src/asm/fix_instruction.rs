@@ -88,6 +88,38 @@ pub fn fix_instruction(instruction: asm::Instruction) -> Vec<asm::Instruction> {
                 },
             ]
         }
+        // cmp can't use memory address for both operands
+        asm::Instruction::Cmp {
+            left: left @ asm::Operand::Stack(_),
+            right: right @ asm::Operand::Stack(_),
+        } => {
+            vec![
+                asm::Instruction::Move {
+                    src: left,
+                    dst: asm::Operand::Register(asm::Register::R10),
+                },
+                asm::Instruction::Cmp {
+                    left: asm::Operand::Register(asm::Register::R10),
+                    right: right,
+                },
+            ]
+        }
+        // right of Cmp can't be constant
+        asm::Instruction::Cmp {
+            left,
+            right: right @ asm::Operand::Imm(_),
+        } => {
+            vec![
+                asm::Instruction::Move {
+                    src: right,
+                    dst: asm::Operand::Register(asm::Register::R11),
+                },
+                asm::Instruction::Cmp {
+                    left,
+                    right: asm::Operand::Register(asm::Register::R11),
+                },
+            ]
+        }
         _ => {
             vec![instruction]
         }
