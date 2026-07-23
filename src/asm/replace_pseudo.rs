@@ -69,6 +69,14 @@ fn replace_instruction(
         asm::Instruction::Idiv(operand) => {
             asm::Instruction::Idiv(replace_operand(operand, allocator))
         }
+        asm::Instruction::Cmp { left, right } => asm::Instruction::Cmp {
+            left: replace_operand(left, allocator),
+            right: replace_operand(right, allocator),
+        },
+        asm::Instruction::SetCC { cond_code, operand } => asm::Instruction::SetCC {
+            cond_code,
+            operand: replace_operand(operand, allocator),
+        },
         instruction_without_operands => instruction_without_operands,
     }
 }
