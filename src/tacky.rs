@@ -4,12 +4,16 @@ type Identifier = String;
 type Int = i32;
 
 pub struct TemporaryVarAllocator {
-    count: i32,
+    var_count: i32,
+    label_count: i32,
 }
 
 impl TemporaryVarAllocator {
     fn new() -> TemporaryVarAllocator {
-        TemporaryVarAllocator { count: 0 }
+        TemporaryVarAllocator {
+            var_count: 0,
+            label_count: 0,
+        }
     }
 }
 
@@ -124,9 +128,9 @@ fn translate_expression(
     match expression {
         parser::Expression::Factor(parser::Factor::Constant(int)) => Val::Constant(int),
         parser::Expression::Factor(parser::Factor::Unary { operator, operand }) => {
-            let dst = Val::Var(format!("tmp.{}", tva.count).to_string());
+            let dst = Val::Var(format!("tmp.{}", tva.var_count).to_string());
             let src = {
-                tva.count += 1;
+                tva.var_count += 1;
                 translate_expression(*operand, instructions, tva)
             };
 
@@ -150,19 +154,22 @@ fn translate_expression(
             right_expression,
         } => match operator {
             parser::BinaryOp::And => {
-                let dst = Val::Var(format!("tmp.{}", tva.count).to_string());
-                tva.count += 1;
+                let dst = Val::Var(format!("tmp.{}", tva.var_count).to_string());
+                tva.var_count += 1;
+
+                let label_count = tva.label_count;
+                tva.label_count += 1;
 
                 let left = translate_expression(*left_expression, instructions, tva);
                 instructions.push(Instruction::JumpIfZero {
                     condition: left,
-                    target: String::from(format!("and_false{}", tva.count)),
+                    target: String::from(format!("and_false{}", label_count)),
                 });
 
                 let right = translate_expression(*right_expression, instructions, tva);
                 instructions.push(Instruction::JumpIfZero {
                     condition: right,
-                    target: String::from(format!("and_false{}", tva.count)),
+                    target: String::from(format!("and_false{}", label_count)),
                 });
 
                 instructions.push(Instruction::Copy {
@@ -171,12 +178,12 @@ fn translate_expression(
                 });
 
                 instructions.push(Instruction::Jump {
-                    target: String::from(format!("and_end{}", tva.count)),
+                    target: String::from(format!("and_end{}", label_count)),
                 });
 
                 instructions.push(Instruction::Label(String::from(format!(
                     "and_false{}",
-                    tva.count
+                    label_count
                 ))));
 
                 instructions.push(Instruction::Copy {
@@ -186,24 +193,27 @@ fn translate_expression(
 
                 instructions.push(Instruction::Label(String::from(format!(
                     "and_end{}",
-                    tva.count
+                    label_count
                 ))));
                 dst
             }
             parser::BinaryOp::Or => {
-                let dst = Val::Var(format!("tmp.{}", tva.count).to_string());
-                tva.count += 1;
+                let dst = Val::Var(format!("tmp.{}", tva.var_count).to_string());
+                tva.var_count += 1;
+
+                let label_count = tva.label_count;
+                tva.label_count += 1;
 
                 let left = translate_expression(*left_expression, instructions, tva);
                 instructions.push(Instruction::JumpIfNotZero {
                     condition: left,
-                    target: String::from(format!("or_false{}", tva.count)),
+                    target: String::from(format!("or_false{}", label_count)),
                 });
 
                 let right = translate_expression(*right_expression, instructions, tva);
                 instructions.push(Instruction::JumpIfNotZero {
                     condition: right,
-                    target: String::from(format!("or_false{}", tva.count)),
+                    target: String::from(format!("or_false{}", label_count)),
                 });
 
                 instructions.push(Instruction::Copy {
@@ -212,12 +222,12 @@ fn translate_expression(
                 });
 
                 instructions.push(Instruction::Jump {
-                    target: String::from(format!("or_end{}", tva.count)),
+                    target: String::from(format!("or_end{}", label_count)),
                 });
 
                 instructions.push(Instruction::Label(String::from(format!(
                     "or_false{}",
-                    tva.count
+                    label_count
                 ))));
 
                 instructions.push(Instruction::Copy {
@@ -227,13 +237,13 @@ fn translate_expression(
 
                 instructions.push(Instruction::Label(String::from(format!(
                     "or_end{}",
-                    tva.count
+                    label_count
                 ))));
                 dst
             }
             other_operator => {
-                let dst = Val::Var(format!("tmp.{}", tva.count).to_string());
-                tva.count += 1;
+                let dst = Val::Var(format!("tmp.{}", tva.var_count).to_string());
+                tva.var_count += 1;
                 let left = translate_expression(*left_expression, instructions, tva);
                 let right = translate_expression(*right_expression, instructions, tva);
                 let op = match other_operator {
