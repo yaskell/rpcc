@@ -217,7 +217,7 @@ fn translate_expression(
                 });
 
                 instructions.push(Instruction::Copy {
-                    src: Val::Constant(1),
+                    src: Val::Constant(0),
                     dst: dst.clone(),
                 });
 
@@ -231,7 +231,7 @@ fn translate_expression(
                 ))));
 
                 instructions.push(Instruction::Copy {
-                    src: Val::Constant(0),
+                    src: Val::Constant(1),
                     dst: dst.clone(),
                 });
 
