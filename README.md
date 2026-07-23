@@ -10,11 +10,24 @@ preprocessor, assembler and linker.
 
 - Bare minimum: Can compile a main function that returns an integer into x64
   assembly.
-- Unary operators: Supports the negation (`-`) and bitwise complement (`~`)
-  operators.
-- Binary operators: Supports the addition (`+`), multiplication (`*`), division
-  (`/`) and remainder (`%`) operators.
-- ...more features in progress
+- Unary operators: Supports
+    - negation (`-`)
+    - bitwise complement (`~`)
+    - logical NOT (`!`)
+- Binary operators: Supports
+     - addition (`+`)
+     - multiplication (`*`)
+     - division (`/`)
+     - remainder (`%`)
+     - logical AND (`&&`)
+     - logical OR (`||`)
+     - equal to (`==`)
+     - not equal to (`!=`)
+     - less than (`<`)
+     - greater than (`>`)
+     - less than or equal to (`<=`)
+     - greater than or equal to (`>=`)
+ - ...more features in progress
 
 ## Getting started
 
