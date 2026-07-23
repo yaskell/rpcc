@@ -8,7 +8,19 @@ pub struct Program {
 #[derive(Debug)]
 pub struct Function {
     pub name: Identifier,
-    pub body: Statement,
+    pub body: Vec<BlockItem>,
+}
+
+#[derive(Debug)]
+pub enum BlockItem {
+    S(Statement),
+    D(Declaration),
+}
+
+#[derive(Debug)]
+pub struct Declaration {
+    name: Identifier,
+    init: Option<Expression>,
 }
 
 pub type Identifier = String;
@@ -18,23 +30,30 @@ pub type Int = i32;
 #[derive(Debug)]
 pub enum Statement {
     Return(Expression),
+    Expression(Expression),
+    Null,
 }
 
 #[derive(Debug)]
 pub enum Expression {
+    Constant(Int),
+    Var(Identifier),
+    Unary {
+        operator: UnaryOp,
+        operand: Box<Expression>,
+    },
     Binary {
         operator: BinaryOp,
         left_expression: Box<Expression>,
         right_expression: Box<Expression>,
     },
-    Constant(Int),
-    Unary {
-        operator: UnaryOp,
-        operand: Box<Expression>,
+    Assignment {
+        lvalue: Box<Expression>,
+        expression: Box<Expression>,
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BinaryOp {
     Add,
     Subtract,
@@ -49,9 +68,8 @@ pub enum BinaryOp {
     LessOrEqual,
     GreaterThan,
     GreaterOrEqual,
+    Assignment,
 }
-
-const UNARY_PRECEDENCE: u8 = u8::MAX;
 
 impl BinaryOp {
     fn precedence(&self) -> u8 {
@@ -65,6 +83,7 @@ impl BinaryOp {
             BinaryOp::Equal | BinaryOp::NotEqual => 30,
             BinaryOp::And => 10,
             BinaryOp::Or => 5,
+            BinaryOp::Assignment => 1,
         }
     }
 
@@ -83,6 +102,7 @@ impl BinaryOp {
             Token::RightAngleBracket => BinaryOp::GreaterThan,
             Token::LeftAngleBracketEqual => BinaryOp::LessOrEqual,
             Token::RightAngleBracketEqual => BinaryOp::GreaterOrEqual,
+            Token::Equal => BinaryOp::Assignment,
             _ => return None,
         })
     }
@@ -132,11 +152,23 @@ fn parse_function(tokens: &mut Vec<Token>) -> Function {
     consume(Token::Void, tokens);
     consume(Token::CloseParan, tokens);
     consume(Token::OpenBrace, tokens);
-    let statement = parse_statement(tokens);
+
+    let mut block_items = Vec::new();
+    while tokens.first().is_some_and(|x| *x != Token::CloseBrace) {
+        block_items.push(parse_block_items(tokens))
+    }
+
     consume(Token::CloseBrace, tokens);
     Function {
         name: identifier,
-        body: statement,
+        body: block_items,
+    }
+}
+
+fn parse_block_items(tokens: &mut Vec<Token>) -> BlockItem {
+    match tokens.first().unwrap() {
+        Token::Int => BlockItem::D(parse_declaration(tokens)),
+        _ => BlockItem::S(parse_statement(tokens)),
     }
 }
 
@@ -147,24 +179,83 @@ fn parse_identifier(tokens: &mut Vec<Token>) -> Identifier {
     }
 }
 
+fn parse_declaration(tokens: &mut Vec<Token>) -> Declaration {
+    consume(Token::Int, tokens);
+    let identifier = parse_identifier(tokens);
+    let expression = if tokens.first() == Some(&Token::Equal) {
+        consume(Token::Equal, tokens);
+        Some(parse_expression(tokens, 0))
+    } else {
+        None
+    };
+    consume(Token::Semicolon, tokens);
+    Declaration {
+        name: identifier,
+        init: expression,
+    }
+}
+
 fn parse_statement(tokens: &mut Vec<Token>) -> Statement {
-    match tokens.remove(0) {
+    match tokens.first().unwrap() {
         Token::Return => {
+            consume(Token::Return, tokens);
             let expression = parse_expression(tokens, 0);
             consume(Token::Semicolon, tokens);
-            return Statement::Return(expression);
+            Statement::Return(expression)
         }
-        value => panic!("Syntax error: expected <return>, found: '{:?}'", value),
+        Token::Semicolon => {
+            consume(Token::Semicolon, tokens);
+            Statement::Null
+        }
+        _ => {
+            let expression = parse_expression(tokens, 0);
+            consume(Token::Semicolon, tokens);
+            Statement::Expression(expression)
+        }
     }
 }
 
 fn parse_expression(tokens: &mut Vec<Token>, min_prec: u8) -> Expression {
-    let mut left = match tokens.first().and_then(UnaryOp::from_token) {
+    let mut left = parse_factor(tokens);
+
+    while let Some(binary_op) = tokens.first().and_then(BinaryOp::from_token) {
+        let prec = binary_op.precedence();
+
+        if prec < min_prec {
+            break;
+        }
+
+        match binary_op {
+            BinaryOp::Assignment => {
+                consume(Token::Equal, tokens);
+                let right = parse_expression(tokens, prec);
+                left = Expression::Assignment {
+                    lvalue: Box::new(left),
+                    expression: Box::new(right),
+                };
+            }
+            _ => {
+                tokens.remove(0);
+                let right = parse_expression(tokens, prec + 1);
+                left = Expression::Binary {
+                    operator: binary_op,
+                    left_expression: Box::new(left),
+                    right_expression: Box::new(right),
+                };
+            }
+        }
+    }
+
+    left
+}
+
+fn parse_factor(tokens: &mut Vec<Token>) -> Expression {
+    match tokens.first().and_then(UnaryOp::from_token) {
         Some(unary_op) => {
             tokens.remove(0);
             Expression::Unary {
                 operator: unary_op,
-                operand: Box::new(parse_expression(tokens, UNARY_PRECEDENCE)),
+                operand: Box::new(parse_factor(tokens)),
             }
         }
         None => match tokens.remove(0) {
@@ -174,28 +265,10 @@ fn parse_expression(tokens: &mut Vec<Token>, min_prec: u8) -> Expression {
                 consume(Token::CloseParan, tokens);
                 expr
             }
+            Token::Identifier(identifier) => Expression::Var(identifier),
             token => panic!("Malformed factor: {:?}", token),
         },
-    };
-
-    while let Some(binary_op) = tokens.first().and_then(BinaryOp::from_token) {
-        let prec = BinaryOp::precedence(&binary_op);
-        if prec < min_prec {
-            break;
-        }
-
-        tokens.remove(0);
-
-        let right = parse_expression(tokens, prec + 1);
-
-        left = Expression::Binary {
-            operator: binary_op,
-            left_expression: Box::new(left),
-            right_expression: Box::new(right),
-        };
     }
-
-    left
 }
 
 fn parse_int(int: i32) -> Int {

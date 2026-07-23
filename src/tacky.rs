@@ -98,12 +98,26 @@ pub fn translate_program(program: parser::Program) -> Program {
 fn translate_function(function: parser::Function, tva: &mut TemporaryVarAllocator) -> Function {
     Function {
         identifier: translate_identifier(function.name),
-        body: translate_statement(function.body, tva),
+        body: function
+            .body
+            .into_iter()
+            .flat_map(|block_item| translate_block_item(block_item, tva))
+            .collect(),
     }
 }
 
 fn translate_identifier(identifier: Identifier) -> String {
     identifier
+}
+
+fn translate_block_item(
+    block_item: parser::BlockItem,
+    tva: &mut TemporaryVarAllocator,
+) -> Vec<Instruction> {
+    match block_item {
+        parser::BlockItem::S(statement) => translate_statement(statement, tva),
+        parser::BlockItem::D(declaration) => todo!(),
+    }
 }
 
 fn translate_statement(
@@ -116,6 +130,8 @@ fn translate_statement(
             let value = translate_expression(expression, &mut instructions, tva);
             instructions.push(Instruction::Return(value))
         }
+        parser::Statement::Expression(expression) => todo!(),
+        parser::Statement::Null => todo!(),
     };
     instructions
 }
@@ -261,6 +277,7 @@ fn translate_expression(
                     parser::BinaryOp::And | parser::BinaryOp::Or => {
                         unreachable!("Should've matched super branch")
                     }
+                    parser::BinaryOp::Assignment => todo!(),
                 };
 
                 instructions.push(Instruction::Binary {
@@ -272,5 +289,7 @@ fn translate_expression(
                 dst
             }
         },
+        parser::Expression::Var(_) => todo!(),
+        parser::Expression::Assignment { lvalue, expression } => todo!(),
     }
 }
