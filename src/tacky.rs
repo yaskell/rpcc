@@ -126,8 +126,8 @@ fn translate_expression(
     tva: &mut TemporaryVarAllocator,
 ) -> Val {
     match expression {
-        parser::Expression::Factor(parser::Factor::Constant(int)) => Val::Constant(int),
-        parser::Expression::Factor(parser::Factor::Unary { operator, operand }) => {
+        parser::Expression::Constant(int) => Val::Constant(int),
+        parser::Expression::Unary { operator, operand } => {
             let dst = Val::Var(format!("tmp.{}", tva.var_count).to_string());
             let src = {
                 tva.var_count += 1;

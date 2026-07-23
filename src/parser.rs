@@ -22,16 +22,11 @@ pub enum Statement {
 
 #[derive(Debug)]
 pub enum Expression {
-    Factor(Factor),
     Binary {
         operator: BinaryOp,
         left_expression: Box<Expression>,
         right_expression: Box<Expression>,
     },
-}
-
-#[derive(Debug)]
-pub enum Factor {
     Constant(Int),
     Unary {
         operator: UnaryOp,
@@ -55,6 +50,8 @@ pub enum BinaryOp {
     GreaterThan,
     GreaterOrEqual,
 }
+
+const UNARY_PRECEDENCE: u8 = u8::MAX;
 
 impl BinaryOp {
     fn precedence(&self) -> u8 {
@@ -162,7 +159,24 @@ fn parse_statement(tokens: &mut Vec<Token>) -> Statement {
 }
 
 fn parse_expression(tokens: &mut Vec<Token>, min_prec: u8) -> Expression {
-    let mut left = parse_factor(tokens);
+    let mut left = match tokens.first().and_then(UnaryOp::from_token) {
+        Some(unary_op) => {
+            tokens.remove(0);
+            Expression::Unary {
+                operator: unary_op,
+                operand: Box::new(parse_expression(tokens, UNARY_PRECEDENCE)),
+            }
+        }
+        None => match tokens.remove(0) {
+            Token::Constant(i) => Expression::Constant(parse_int(i)),
+            Token::OpenParan => {
+                let expr = parse_expression(tokens, 0);
+                consume(Token::CloseParan, tokens);
+                expr
+            }
+            token => panic!("Malformed factor: {:?}", token),
+        },
+    };
 
     while let Some(binary_op) = tokens.first().and_then(BinaryOp::from_token) {
         let prec = BinaryOp::precedence(&binary_op);
@@ -182,27 +196,6 @@ fn parse_expression(tokens: &mut Vec<Token>, min_prec: u8) -> Expression {
     }
 
     left
-}
-
-fn parse_factor(tokens: &mut Vec<Token>) -> Expression {
-    match tokens.first().and_then(UnaryOp::from_token) {
-        Some(unary_op) => {
-            tokens.remove(0);
-            Expression::Factor(Factor::Unary {
-                operator: unary_op,
-                operand: Box::new(parse_factor(tokens)),
-            })
-        }
-        None => match tokens.remove(0) {
-            Token::Constant(i) => Expression::Factor(Factor::Constant(parse_int(i))),
-            Token::OpenParan => {
-                let expr = parse_expression(tokens, 0);
-                consume(Token::CloseParan, tokens);
-                expr
-            }
-            token => panic!("Malformed factor: {:?}", token),
-        },
-    }
 }
 
 fn parse_int(int: i32) -> Int {
