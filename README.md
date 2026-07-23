@@ -10,17 +10,19 @@ preprocessor, assembler and linker.
 
 - Bare minimum: Can compile a main function that returns an integer into x64
   assembly.
-- Unary operators: Supports
+- Arithmetic operators:
+    - addition (`+`)
+    - subtraction (`-`)
+    - multiplication (`*`)
+    - division (`/`)
+    - remainder (`%`)
     - negation (`-`)
     - bitwise complement (`~`)
-    - logical NOT (`!`)
-- Binary operators: Supports
-     - addition (`+`)
-     - multiplication (`*`)
-     - division (`/`)
-     - remainder (`%`)
-     - logical AND (`&&`)
-     - logical OR (`||`)
+- Logical operators:
+    - AND (`&&`)
+    - OR (`||`)
+    - NOT (`!`)
+- Comparison operators:
      - equal to (`==`)
      - not equal to (`!=`)
      - less than (`<`)
