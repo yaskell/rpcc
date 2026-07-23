@@ -32,6 +32,7 @@ pub enum Token {
     RightAngleBracket,
     LeftAngleBracketEqual,
     RightAngleBracketEqual,
+    Equal,
 }
 
 impl Token {
@@ -169,6 +170,10 @@ pub static OTHER_TOKENS_DEFINITIONS: LazyLock<Vec<TokenDefinition>> = LazyLock::
         TokenDefinition {
             token_type: Token::RightAngleBracketEqual,
             regex: Regex::new(r"^>=").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::Equal,
+            regex: Regex::new(r"^=").unwrap(),
         },
     ]
 });
