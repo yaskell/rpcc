@@ -2,11 +2,14 @@ mod asm;
 mod code_emission;
 mod lexer;
 mod parser;
+mod semantic_analysis;
 mod tacky;
 
 use std::env;
 use std::fs;
 use std::process;
+
+use crate::semantic_analysis::resolve_variables;
 
 fn main() {
     let arguments = Arguments::new(&env::args().collect::<Vec<String>>());
@@ -39,6 +42,13 @@ fn main() {
     let ast = parser::parse(&mut tokens);
     if let Some(Flag::Parse) = arguments.flag {
         println!("Stopped before generating assembly");
+        println!("Parsed file contents: {:?}", &ast);
+        process::exit(0);
+    }
+
+    let ast = resolve_variables(ast);
+    if let Some(Flag::Validate) = arguments.flag {
+        println!("Stopped generating tacky, did semantic analysis");
         println!("Parsed file contents: {:?}", &ast);
         process::exit(0);
     }
@@ -82,6 +92,7 @@ fn main() {
 enum Flag {
     Lex,
     Parse,
+    Validate,
     Codegen,
     Assembly,
     Tacky,
@@ -116,6 +127,7 @@ impl Arguments {
             flag = match args[1].as_str() {
                 "--lex" => Some(Flag::Lex),
                 "--parse" => Some(Flag::Parse),
+                "--Validate" => Some(Flag::Validate),
                 "--codegen" => Some(Flag::Codegen),
                 "-S" => Some(Flag::Assembly),
                 "--tacky" => Some(Flag::Tacky),
@@ -137,6 +149,7 @@ fn usage_message() -> ! {
 Options:
     --lex        Run lexer only and print tokens
     --parse      Run lexer + parser and print AST
+    --validate   Run lexer + parser + semantic analysis and print AST
     --tacky      Run tacky compiler pass, stop before assembly generation
     --codegen    Run up to assembly generation and print result
     -S           Emit assembly file (.s) but do not remove it

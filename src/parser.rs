@@ -19,8 +19,8 @@ pub enum BlockItem {
 
 #[derive(Debug)]
 pub struct Declaration {
-    name: Identifier,
-    init: Option<Expression>,
+    pub name: Identifier,
+    pub init: Option<Expression>,
 }
 
 pub type Identifier = String;
