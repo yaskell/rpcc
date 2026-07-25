@@ -102,6 +102,7 @@ fn translate_function(function: parser::Function, tva: &mut TemporaryVarAllocato
             .body
             .into_iter()
             .flat_map(|block_item| translate_block_item(block_item, tva))
+            .chain(std::iter::once(Instruction::Return(Val::Constant(0))))
             .collect(),
     }
 }
