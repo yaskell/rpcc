@@ -116,7 +116,25 @@ fn translate_block_item(
 ) -> Vec<Instruction> {
     match block_item {
         parser::BlockItem::S(statement) => translate_statement(statement, tva),
-        parser::BlockItem::D(declaration) => todo!(),
+        parser::BlockItem::D(declaration) => translate_declaration(declaration, tva),
+    }
+}
+
+fn translate_declaration(
+    parser::Declaration { name, init }: parser::Declaration,
+    tva: &mut TemporaryVarAllocator,
+) -> Vec<Instruction> {
+    let mut instructions = Vec::new();
+    match init {
+        Some(e) => {
+            let var = parser::Expression::Assignment {
+                lvalue: Box::new(parser::Expression::Var(name)),
+                expression: Box::new(e),
+            };
+            translate_expression(var, &mut instructions, tva);
+            instructions
+        }
+        None => instructions,
     }
 }
 
@@ -130,8 +148,10 @@ fn translate_statement(
             let value = translate_expression(expression, &mut instructions, tva);
             instructions.push(Instruction::Return(value))
         }
-        parser::Statement::Expression(expression) => todo!(),
-        parser::Statement::Null => todo!(),
+        parser::Statement::Expression(expression) => {
+            translate_expression(expression, &mut instructions, tva);
+        }
+        parser::Statement::Null => {}
     };
     instructions
 }
@@ -142,6 +162,16 @@ fn translate_expression(
     tva: &mut TemporaryVarAllocator,
 ) -> Val {
     match expression {
+        parser::Expression::Var(v) => Val::Var(v),
+        parser::Expression::Assignment { lvalue, expression } => {
+            let right = translate_expression(*expression, instructions, tva);
+            let left = translate_expression(*lvalue, instructions, tva);
+            instructions.push(Instruction::Copy {
+                src: right,
+                dst: left.clone(),
+            });
+            left
+        }
         parser::Expression::Constant(int) => Val::Constant(int),
         parser::Expression::Unary { operator, operand } => {
             let dst = Val::Var(format!("tmp.{}", tva.var_count).to_string());
@@ -274,10 +304,9 @@ fn translate_expression(
                     parser::BinaryOp::LessOrEqual => BinaryOp::LessOrEqual,
                     parser::BinaryOp::GreaterThan => BinaryOp::GreaterThan,
                     parser::BinaryOp::GreaterOrEqual => BinaryOp::GreaterOrEqual,
-                    parser::BinaryOp::And | parser::BinaryOp::Or => {
+                    parser::BinaryOp::And | parser::BinaryOp::Or | parser::BinaryOp::Assignment => {
                         unreachable!("Should've matched super branch")
                     }
-                    parser::BinaryOp::Assignment => todo!(),
                 };
 
                 instructions.push(Instruction::Binary {
@@ -289,7 +318,5 @@ fn translate_expression(
                 dst
             }
         },
-        parser::Expression::Var(_) => todo!(),
-        parser::Expression::Assignment { lvalue, expression } => todo!(),
     }
 }
