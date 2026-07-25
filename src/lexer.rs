@@ -33,6 +33,10 @@ pub enum Token {
     LeftAngleBracketEqual,
     RightAngleBracketEqual,
     Equal,
+    If,
+    Else,
+    QuestionMark,
+    Colon,
 }
 
 impl Token {
@@ -73,6 +77,14 @@ pub static KEYWORD_TOKENS_DEFINITIONS: LazyLock<Vec<TokenDefinition>> = LazyLock
         TokenDefinition {
             token_type: Token::Return,
             regex: Regex::new(r"^return\b").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::If,
+            regex: Regex::new(r"^if\b").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::Else,
+            regex: Regex::new(r"^else\b").unwrap(),
         },
     ]
 });
@@ -174,6 +186,14 @@ pub static OTHER_TOKENS_DEFINITIONS: LazyLock<Vec<TokenDefinition>> = LazyLock::
         TokenDefinition {
             token_type: Token::Equal,
             regex: Regex::new(r"^=").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::QuestionMark,
+            regex: Regex::new(r"^\?\s*").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::Colon,
+            regex: Regex::new(r"^:").unwrap(),
         },
     ]
 });
