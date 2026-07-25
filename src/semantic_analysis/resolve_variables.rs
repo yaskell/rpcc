@@ -85,7 +85,7 @@ pub fn resolve_exp(exp: parser::Expression, va: &mut VarAllocator) -> parser::Ex
                     expression: Box::new(resolve_exp(*expression, va)),
                 };
             }
-            panic!("invalid lvalue: `{:?}`", lvalue)
+            panic!("Invalid lvalue: `{:?}`", lvalue)
         }
         parser::Expression::Var(v) => match va.map.get(&v) {
             Some(var) => return parser::Expression::Var(var.clone()),
