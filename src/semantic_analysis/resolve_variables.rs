@@ -22,7 +22,7 @@ impl VarAllocator {
 
     fn new_var(&mut self, var: String) -> String {
         match self.map.get(&var) {
-            Some(v) => panic!("Duplicate variable declaration: {v}"),
+            Some(_) => panic!("Duplicate variable declaration: {var}"),
             None => {
                 let name = VarAllocator::new_unique_name(self, var.as_str());
                 self.map.insert(var.clone(), name.clone());
