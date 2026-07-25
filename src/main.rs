@@ -49,7 +49,7 @@ fn main() {
     let ast = resolve_variables(ast);
     if let Some(Flag::Validate) = arguments.flag {
         println!("Stopped generating tacky, did semantic analysis");
-        println!("Parsed file contents: {:?}", &ast);
+        println!("Validated file contents: {:?}", &ast);
         process::exit(0);
     }
 
@@ -127,7 +127,7 @@ impl Arguments {
             flag = match args[1].as_str() {
                 "--lex" => Some(Flag::Lex),
                 "--parse" => Some(Flag::Parse),
-                "--Validate" => Some(Flag::Validate),
+                "--validate" => Some(Flag::Validate),
                 "--codegen" => Some(Flag::Codegen),
                 "-S" => Some(Flag::Assembly),
                 "--tacky" => Some(Flag::Tacky),

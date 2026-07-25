@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-cargo run -- --tacky ./return.c && (
+cargo run -- --validate ./return.c && (
     ./return
     echo $?
 )
