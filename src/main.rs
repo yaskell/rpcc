@@ -35,28 +35,32 @@ fn main() {
     let mut tokens = lexer::lex(&file_content);
     if let Some(Flag::Lex) = arguments.flag {
         println!("Stopped before parsing");
-        println!("Lexed file contents: {:?}", &tokens);
+        println!("Lexed file contents:");
+        dbg!(&tokens);
         process::exit(0);
     }
 
     let ast = parser::parse(&mut tokens);
     if let Some(Flag::Parse) = arguments.flag {
         println!("Stopped before generating assembly");
-        println!("Parsed file contents: {:?}", &ast);
+        println!("Parsed file contents:",);
+        dbg!(&ast);
         process::exit(0);
     }
 
     let ast = resolve_variables(ast);
     if let Some(Flag::Validate) = arguments.flag {
         println!("Stopped generating tacky, did semantic analysis");
-        println!("Validated file contents: {:?}", &ast);
+        println!("Validated file contents:");
+        dbg!(&ast);
         process::exit(0);
     }
 
     let tacky_ir = tacky::translate_program(ast);
     if let Some(Flag::Tacky) = arguments.flag {
         println!("Stopped before generating assembly, ran tacky compilation pass");
-        println!("Parsed file contents: {:?}", &tacky_ir);
+        println!("Parsed file contents:");
+        dbg!(&tacky_ir);
         process::exit(0);
     }
 
@@ -65,7 +69,8 @@ fn main() {
     let asm_ast = asm::fix_program(asm_ast, offset);
     if let Some(Flag::Codegen) = arguments.flag {
         println!("Stopped before code emission");
-        println!("Assembly Generation: {:?}", &asm_ast);
+        println!("Assembly Generation:");
+        dbg!(&asm_ast);
         process::exit(0);
     }
 
