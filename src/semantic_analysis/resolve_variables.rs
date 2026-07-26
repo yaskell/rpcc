@@ -104,7 +104,16 @@ pub fn resolve_exp(exp: parser::Expression, va: &mut VarAllocator) -> parser::Ex
             left_expression: Box::new(resolve_exp(*left_expression, va)),
             right_expression: Box::new(resolve_exp(*right_expression, va)),
         },
-        other_without_subexpressions => other_without_subexpressions,
+        parser::Expression::Conditional {
+            condition,
+            then,
+            otherwise,
+        } => parser::Expression::Conditional {
+            condition: Box::new(resolve_exp(*condition, va)),
+            then: Box::new(resolve_exp(*then, va)),
+            otherwise: Box::new(resolve_exp(*otherwise, va)),
+        },
+        exp_without_subexp => exp_without_subexp,
     }
 }
 
@@ -114,9 +123,16 @@ pub fn resolve_statement(statement: parser::Statement, va: &mut VarAllocator) ->
         parser::Statement::Expression(exp) => parser::Statement::Expression(resolve_exp(exp, va)),
         parser::Statement::Null => parser::Statement::Null,
         parser::Statement::If {
-            condition: _,
-            then: _,
-            otherwise: _,
-        } => todo!(),
+            condition,
+            then,
+            otherwise,
+        } => parser::Statement::If {
+            condition: resolve_exp(condition, va),
+            then: Box::new(resolve_statement(*then, va)),
+            otherwise: match otherwise {
+                Some(statement) => Some(Box::new(resolve_statement(*statement, va))),
+                None => None,
+            },
+        },
     }
 }

@@ -313,6 +313,7 @@ fn translate_expression(
                     parser::BinaryOp::And | parser::BinaryOp::Or | parser::BinaryOp::Assignment => {
                         unreachable!("Should've matched super branch")
                     }
+                    parser::BinaryOp::Ternary => todo!(),
                 };
 
                 instructions.push(Instruction::Binary {
@@ -324,5 +325,10 @@ fn translate_expression(
                 dst
             }
         },
+        parser::Expression::Conditional {
+            condition,
+            then,
+            otherwise,
+        } => todo!(),
     }
 }
