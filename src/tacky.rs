@@ -154,10 +154,44 @@ fn translate_statement(
         }
         parser::Statement::Null => {}
         parser::Statement::If {
-            condition: _,
-            then: _,
-            otherwise: _,
-        } => todo!(),
+            condition,
+            then,
+            otherwise,
+        } => {
+            let label_count = tva.label_count;
+            tva.label_count += 1;
+
+            let c = translate_expression(condition, &mut instructions, tva);
+            match otherwise {
+                Some(otherwise) => {
+                    instructions.push(Instruction::JumpIfZero {
+                        condition: c,
+                        target: String::from(format!("if_else{}", label_count)),
+                    });
+                    instructions.extend(translate_statement(*then, tva));
+
+                    instructions.push(Instruction::Jump {
+                        target: String::from(format!("if_end{}", label_count)),
+                    });
+                    instructions.push(Instruction::Label(String::from(format!(
+                        "if_else{}",
+                        label_count
+                    ))));
+                    instructions.extend(translate_statement(*otherwise, tva));
+                }
+                None => {
+                    instructions.push(Instruction::JumpIfZero {
+                        condition: c,
+                        target: String::from(format!("if_end{}", label_count)),
+                    });
+                    instructions.extend(translate_statement(*then, tva));
+                }
+            }
+            instructions.push(Instruction::Label(String::from(format!(
+                "if_end{}",
+                label_count
+            ))));
+        }
     };
     instructions
 }
@@ -313,7 +347,9 @@ fn translate_expression(
                     parser::BinaryOp::And | parser::BinaryOp::Or | parser::BinaryOp::Assignment => {
                         unreachable!("Should've matched super branch")
                     }
-                    parser::BinaryOp::Ternary => todo!(),
+                    parser::BinaryOp::Ternary => {
+                        unreachable!("Ternary Expression not represented as BinaryOp in Tacky")
+                    }
                 };
 
                 instructions.push(Instruction::Binary {
@@ -329,6 +365,46 @@ fn translate_expression(
             condition,
             then,
             otherwise,
-        } => todo!(),
+        } => {
+            let dst = Val::Var(format!("tmp.{}", tva.var_count).to_string());
+            tva.var_count += 1;
+
+            let label_count = tva.label_count;
+            tva.label_count += 1;
+
+            let condition = translate_expression(*condition, instructions, tva);
+
+            instructions.push(Instruction::JumpIfZero {
+                condition,
+                target: String::from(format!("ternary_otherwise{}", label_count)),
+            });
+
+            let e1 = translate_expression(*then, instructions, tva);
+            instructions.push(Instruction::Copy {
+                src: e1,
+                dst: dst.clone(),
+            });
+
+            instructions.push(Instruction::Jump {
+                target: String::from(format!("ternary_end{}", label_count)),
+            });
+
+            instructions.push(Instruction::Label(String::from(format!(
+                "ternary_otherwise{}",
+                label_count
+            ))));
+
+            let e2 = translate_expression(*otherwise, instructions, tva);
+            instructions.push(Instruction::Copy {
+                src: e2,
+                dst: dst.clone(),
+            });
+
+            instructions.push(Instruction::Label(String::from(format!(
+                "ternary_end{}",
+                label_count
+            ))));
+            dst
+        }
     }
 }
