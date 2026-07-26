@@ -185,6 +185,8 @@ fn translate_unary_op(unary_op: tacky::UnaryOp) -> asm::UnaryOp {
     match unary_op {
         tacky::UnaryOp::Complement => asm::UnaryOp::Not,
         tacky::UnaryOp::Negate => asm::UnaryOp::Neg,
-        tacky::UnaryOp::Not => todo!(),
+        tacky::UnaryOp::Not => {
+            unreachable!("Tacky unary logical NOT is not converted into asm unary structure")
+        }
     }
 }
