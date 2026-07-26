@@ -153,6 +153,11 @@ fn translate_statement(
             translate_expression(expression, &mut instructions, tva);
         }
         parser::Statement::Null => {}
+        parser::Statement::If {
+            condition: _,
+            then: _,
+            otherwise: _,
+        } => todo!(),
     };
     instructions
 }

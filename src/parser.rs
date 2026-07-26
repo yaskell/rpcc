@@ -31,6 +31,11 @@ pub type Int = i32;
 pub enum Statement {
     Return(Expression),
     Expression(Expression),
+    If {
+        condition: Expression,
+        then: Box<Statement>,
+        otherwise: Option<Box<Statement>>,
+    },
     Null,
 }
 
@@ -51,6 +56,11 @@ pub enum Expression {
         lvalue: Box<Expression>,
         expression: Box<Expression>,
     },
+    Conditional {
+        condition: Box<Expression>,
+        then: Box<Expression>,
+        otherwise: Box<Expression>,
+    },
 }
 
 #[derive(Debug, PartialEq)]
@@ -69,6 +79,7 @@ pub enum BinaryOp {
     GreaterThan,
     GreaterOrEqual,
     Assignment,
+    Ternary,
 }
 
 impl BinaryOp {
@@ -83,6 +94,7 @@ impl BinaryOp {
             BinaryOp::Equal | BinaryOp::NotEqual => 30,
             BinaryOp::And => 10,
             BinaryOp::Or => 5,
+            BinaryOp::Ternary => 3,
             BinaryOp::Assignment => 1,
         }
     }
@@ -103,6 +115,7 @@ impl BinaryOp {
             Token::LeftAngleBracketEqual => BinaryOp::LessOrEqual,
             Token::RightAngleBracketEqual => BinaryOp::GreaterOrEqual,
             Token::Equal => BinaryOp::Assignment,
+            Token::QuestionMark => BinaryOp::Ternary,
             _ => return None,
         })
     }
@@ -207,6 +220,24 @@ fn parse_statement(tokens: &mut Vec<Token>) -> Statement {
             consume(Token::Semicolon, tokens);
             Statement::Null
         }
+        Token::If => {
+            consume(Token::If, tokens);
+            consume(Token::OpenParan, tokens);
+            let condition = parse_expression(tokens, 0);
+            consume(Token::CloseParan, tokens);
+            let then = parse_statement(tokens);
+            let mut otherwise = None;
+
+            if Some(&Token::Else) == tokens.first() {
+                consume(Token::Else, tokens);
+                otherwise = Some(parse_statement(tokens));
+            }
+            Statement::If {
+                condition,
+                then: Box::new(then),
+                otherwise: otherwise.map(Box::new),
+            }
+        }
         _ => {
             let expression = parse_expression(tokens, 0);
             consume(Token::Semicolon, tokens);
@@ -218,7 +249,11 @@ fn parse_statement(tokens: &mut Vec<Token>) -> Statement {
 fn parse_expression(tokens: &mut Vec<Token>, min_prec: u8) -> Expression {
     let mut left = parse_factor(tokens);
 
-    while let Some(binary_op) = tokens.first().and_then(BinaryOp::from_token) {
+    loop {
+        let Some(next) = tokens.first() else { break };
+        let Some(binary_op) = BinaryOp::from_token(next) else {
+            break;
+        };
         let prec = binary_op.precedence();
 
         if prec < min_prec {
@@ -234,6 +269,15 @@ fn parse_expression(tokens: &mut Vec<Token>, min_prec: u8) -> Expression {
                     expression: Box::new(right),
                 };
             }
+            BinaryOp::Ternary => {
+                let middle = parse_conditional_middle(tokens);
+                let right = parse_expression(tokens, prec);
+                left = Expression::Conditional {
+                    condition: Box::new(left),
+                    then: Box::new(middle),
+                    otherwise: Box::new(right),
+                };
+            }
             _ => {
                 tokens.remove(0);
                 let right = parse_expression(tokens, prec + 1);
@@ -247,6 +291,13 @@ fn parse_expression(tokens: &mut Vec<Token>, min_prec: u8) -> Expression {
     }
 
     left
+}
+
+fn parse_conditional_middle(tokens: &mut Vec<Token>) -> Expression {
+    consume(Token::QuestionMark, tokens);
+    let middle = parse_expression(tokens, 0);
+    consume(Token::Colon, tokens);
+    middle
 }
 
 fn parse_factor(tokens: &mut Vec<Token>) -> Expression {

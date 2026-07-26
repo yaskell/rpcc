@@ -113,5 +113,10 @@ pub fn resolve_statement(statement: parser::Statement, va: &mut VarAllocator) ->
         parser::Statement::Return(exp) => parser::Statement::Return(resolve_exp(exp, va)),
         parser::Statement::Expression(exp) => parser::Statement::Expression(resolve_exp(exp, va)),
         parser::Statement::Null => parser::Statement::Null,
+        parser::Statement::If {
+            condition: _,
+            then: _,
+            otherwise: _,
+        } => todo!(),
     }
 }
