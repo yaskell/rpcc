@@ -32,6 +32,8 @@ preprocessor, assembler and linker.
 - Local variables: Supports variable declarations with (`int x = 5;`) or without
   initializer (`int x;`), validates variables exist before use and are limited
   to one declaration per scope.
+- Conditionals: Supports `if ... else ...` statements and ternary expressions
+  `... ? ... : ...`
 - ...more features in progress
 
 ## Getting started
