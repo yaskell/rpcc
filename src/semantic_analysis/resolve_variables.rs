@@ -46,10 +46,12 @@ pub fn resolve_function(
 ) -> parser::Function {
     parser::Function {
         name,
-        body: body
-            .into_iter()
-            .map(|i| resolve_block_item(i, va))
-            .collect(),
+        body: parser::Block(
+            body.0
+                .into_iter()
+                .map(|i| resolve_block_item(i, va))
+                .collect(),
+        ),
     }
 }
 
@@ -134,5 +136,6 @@ pub fn resolve_statement(statement: parser::Statement, va: &mut VarAllocator) ->
                 None => None,
             },
         },
+        parser::Statement::Compound(block) => todo!(),
     }
 }

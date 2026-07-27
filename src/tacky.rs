@@ -100,6 +100,7 @@ fn translate_function(function: parser::Function, tva: &mut TemporaryVarAllocato
         identifier: translate_identifier(function.name),
         body: function
             .body
+            .0
             .into_iter()
             .flat_map(|block_item| translate_block_item(block_item, tva))
             .chain(std::iter::once(Instruction::Return(Val::Constant(0))))
@@ -192,6 +193,7 @@ fn translate_statement(
                 label_count
             ))));
         }
+        parser::Statement::Compound(block) => todo!(),
     };
     instructions
 }

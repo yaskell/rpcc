@@ -8,8 +8,11 @@ pub struct Program {
 #[derive(Debug)]
 pub struct Function {
     pub name: Identifier,
-    pub body: Vec<BlockItem>,
+    pub body: Block,
 }
+
+#[derive(Debug)]
+pub struct Block(pub Vec<BlockItem>);
 
 #[derive(Debug)]
 pub enum BlockItem {
@@ -36,6 +39,7 @@ pub enum Statement {
         then: Box<Statement>,
         otherwise: Option<Box<Statement>>,
     },
+    Compound(Block),
     Null,
 }
 
@@ -164,17 +168,11 @@ fn parse_function(tokens: &mut Vec<Token>) -> Function {
     consume(Token::OpenParan, tokens);
     consume(Token::Void, tokens);
     consume(Token::CloseParan, tokens);
-    consume(Token::OpenBrace, tokens);
+    let block = parse_block(tokens);
 
-    let mut block_items = Vec::new();
-    while tokens.first().is_some_and(|x| *x != Token::CloseBrace) {
-        block_items.push(parse_block_items(tokens))
-    }
-
-    consume(Token::CloseBrace, tokens);
     Function {
         name: identifier,
-        body: block_items,
+        body: block,
     }
 }
 
@@ -238,6 +236,7 @@ fn parse_statement(tokens: &mut Vec<Token>) -> Statement {
                 otherwise: otherwise.map(Box::new),
             }
         }
+        Token::OpenBrace => Statement::Compound(parse_block(tokens)),
         _ => {
             let expression = parse_expression(tokens, 0);
             consume(Token::Semicolon, tokens);
@@ -324,4 +323,15 @@ fn parse_factor(tokens: &mut Vec<Token>) -> Expression {
 
 fn parse_int(int: i32) -> Int {
     int
+}
+
+fn parse_block(tokens: &mut Vec<Token>) -> Block {
+    consume(Token::OpenBrace, tokens);
+    let mut block_items = Vec::new();
+    while tokens.first().is_some_and(|x| *x != Token::CloseBrace) {
+        block_items.push(parse_block_items(tokens))
+    }
+    consume(Token::CloseBrace, tokens);
+
+    Block(block_items)
 }
