@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-cargo run -- --validate ./return.c && (
+cargo run -- ./return.c && (
     ./return
     echo $?
 )

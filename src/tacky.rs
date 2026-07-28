@@ -193,7 +193,12 @@ fn translate_statement(
                 label_count
             ))));
         }
-        parser::Statement::Compound(block) => todo!(),
+        parser::Statement::Compound(block) => instructions.extend(
+            block
+                .0
+                .into_iter()
+                .flat_map(|block_item| translate_block_item(block_item, tva)),
+        ),
     };
     instructions
 }
