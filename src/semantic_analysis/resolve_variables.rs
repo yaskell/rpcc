@@ -1,18 +1,24 @@
-use core::panic;
 use std::collections::HashMap;
 
 use crate::parser;
 
+#[derive(Debug, Clone)]
 pub struct VarAllocator {
     pub var_count: i32,
-    pub map: HashMap<String, String>,
+    pub map: HashMap<String, MapEntry>,
+}
+
+#[derive(Debug, Clone)]
+pub struct MapEntry {
+    pub new_name: String,
+    pub from_current_block: bool,
 }
 
 impl VarAllocator {
     fn new() -> VarAllocator {
         VarAllocator {
             var_count: 0,
-            map: HashMap::<String, String>::new(),
+            map: HashMap::<String, MapEntry>::new(),
         }
     }
 
@@ -22,10 +28,18 @@ impl VarAllocator {
 
     fn new_var(&mut self, var: String) -> String {
         match self.map.get(&var) {
-            Some(_) => panic!("Duplicate variable declaration: {var}"),
-            None => {
+            Some(v) if v.from_current_block == true => {
+                panic!("Duplicate variable declaration: {var}")
+            }
+            _ => {
                 let name = VarAllocator::new_unique_name(self, var.as_str());
-                self.map.insert(var.clone(), name.clone());
+                self.map.insert(
+                    var.clone(),
+                    MapEntry {
+                        new_name: name.clone(),
+                        from_current_block: true,
+                    },
+                );
                 self.var_count += 1;
                 name
             }
@@ -42,17 +56,22 @@ pub fn resolve_variables(program: parser::Program) -> parser::Program {
 
 pub fn resolve_function(
     parser::Function { name, body }: parser::Function,
-    va: &mut VarAllocator,
+    mut va: &mut VarAllocator,
 ) -> parser::Function {
     parser::Function {
         name,
-        body: parser::Block(
-            body.0
-                .into_iter()
-                .map(|i| resolve_block_item(i, va))
-                .collect(),
-        ),
+        body: resolve_block(body, &mut va),
     }
+}
+
+pub fn resolve_block(block: parser::Block, va: &mut VarAllocator) -> parser::Block {
+    parser::Block(
+        block
+            .0
+            .into_iter()
+            .map(|i| resolve_block_item(i, va))
+            .collect(),
+    )
 }
 
 pub fn resolve_block_item(item: parser::BlockItem, va: &mut VarAllocator) -> parser::BlockItem {
@@ -90,7 +109,10 @@ pub fn resolve_exp(exp: parser::Expression, va: &mut VarAllocator) -> parser::Ex
             panic!("Invalid lvalue: `{:?}`", lvalue)
         }
         parser::Expression::Var(v) => match va.map.get(&v) {
-            Some(var) => return parser::Expression::Var(var.clone()),
+            Some(MapEntry {
+                new_name,
+                from_current_block: _,
+            }) => return parser::Expression::Var(new_name.clone()),
             None => panic!("Undeclared variable: `{}`", v),
         },
         parser::Expression::Unary { operator, operand } => parser::Expression::Unary {
@@ -136,6 +158,18 @@ pub fn resolve_statement(statement: parser::Statement, va: &mut VarAllocator) ->
                 None => None,
             },
         },
-        parser::Statement::Compound(block) => todo!(),
+        parser::Statement::Compound(block) => {
+            let mut var_allocator = va.clone();
+            var_allocator.map = copy_variable_map(var_allocator.map);
+            parser::Statement::Compound(resolve_block(block, &mut var_allocator))
+        }
     }
+}
+
+pub fn copy_variable_map(map: HashMap<String, MapEntry>) -> HashMap<String, MapEntry> {
+    let mut new_map = map.clone();
+    for v in new_map.values_mut() {
+        v.from_current_block = false
+    }
+    new_map
 }
