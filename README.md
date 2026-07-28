@@ -29,11 +29,13 @@ preprocessor, assembler and linker.
      - greater than (`>`)
      - less than or equal to (`<=`)
      - greater than or equal to (`>=`)
-- Local variables: Supports variable declarations with (`int x = 5;`) or without
+- Variables: Supports variable declarations with (`int x = 5;`) or without
   initializer (`int x;`), validates variables exist before use and are limited
   to one declaration per scope.
 - Conditionals: Supports `if ... else ...` statements and ternary expressions
-  `... ? ... : ...`
+  `... ? ... : ...`.
+- Scopes: Create new scopes using blocks `{ ... }` in functions and as compound
+  statements.
 - ...more features in progress
 
 ## Getting started
