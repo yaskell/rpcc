@@ -75,10 +75,10 @@ fn main() {
     }
 
     let program = code_emission::emit(asm_ast);
-    if let Ok(_) = fs::write(format!("{}.s", filename_base), program) {
+    if let Ok(_) = fs::write(format!("{filename_base}.s"), program) {
         run_command(
             "gcc",
-            &[format!("{}.s", filename_base).as_str(), "-o", filename_base],
+            &[format!("{filename_base}.s").as_str(), "-o", filename_base],
         )
         .expect("Linking failed");
 
@@ -86,7 +86,7 @@ fn main() {
             process::exit(0);
         }
 
-        let _ = fs::remove_file(format!("{}.s", filename_base).as_str());
+        let _ = fs::remove_file(format!("{filename_base}.s").as_str());
 
         process::exit(0);
     }
