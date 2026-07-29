@@ -80,20 +80,19 @@ fn emit_operand(operand: asm::Operand, emit_one_byte_register: bool) -> String {
         asm::Operand::Imm(i) => format!("${i}"),
         asm::Operand::Stack(i) => format!("{i}(%rbp)"),
         asm::Operand::Register(register) => match emit_one_byte_register {
-            true => match register {
-                asm::Register::AX => String::from("%al"),
-                asm::Register::R10 => String::from("%r10b"),
-                asm::Register::DX => String::from("%dl"),
-                asm::Register::R11 => String::from("%r11d"),
-            },
-            false => match register {
-                asm::Register::AX => String::from("%eax"),
-                asm::Register::R10 => String::from("%r10d"),
-                asm::Register::DX => String::from("%edx"),
-                asm::Register::R11 => String::from("%r11d"),
-            },
+            true => String::from(match register {
+                asm::Register::AX => "%al",
+                asm::Register::R10 => "%r10b",
+                asm::Register::DX => "%dl",
+                asm::Register::R11 => "%r11d",
+            }),
+            false => String::from(match register {
+                asm::Register::AX => "%eax",
+                asm::Register::R10 => "%r10d",
+                asm::Register::DX => "%edx",
+                asm::Register::R11 => "%r11d",
+            }),
         },
-
         asm::Operand::Pseudo(_) => {
             unreachable!("All pseudo registers should've been replaced during assembly generation")
         }
@@ -108,20 +107,20 @@ fn emit_unary_op(op: asm::UnaryOp) -> String {
 }
 
 fn emit_binary_op(op: asm::BinaryOp) -> String {
-    match op {
-        asm::BinaryOp::Add => String::from("addl"),
-        asm::BinaryOp::Sub => String::from("subl"),
-        asm::BinaryOp::Mult => String::from("imull"),
-    }
+    String::from(match op {
+        asm::BinaryOp::Add => "addl",
+        asm::BinaryOp::Sub => "subl",
+        asm::BinaryOp::Mult => "imull",
+    })
 }
 
 fn emit_conditional_code(code: asm::ConditionalCode) -> String {
-    match code {
-        asm::ConditionalCode::E => String::from("e"),
-        asm::ConditionalCode::NE => String::from("ne"),
-        asm::ConditionalCode::G => String::from("g"),
-        asm::ConditionalCode::GE => String::from("ge"),
-        asm::ConditionalCode::L => String::from("l"),
-        asm::ConditionalCode::LE => String::from("le"),
-    }
+    String::from(match code {
+        asm::ConditionalCode::E => "e",
+        asm::ConditionalCode::NE => "ne",
+        asm::ConditionalCode::G => "g",
+        asm::ConditionalCode::GE => "ge",
+        asm::ConditionalCode::L => "l",
+        asm::ConditionalCode::LE => "le",
+    })
 }
