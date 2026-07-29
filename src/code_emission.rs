@@ -27,67 +27,50 @@ fn emit_function(fun: asm::Function) -> String {
 fn emit_instructions(instructions: Vec<asm::Instruction>) -> String {
     let mut b = String::new();
     for instruction in instructions {
-        match instruction {
-            asm::Instruction::Move { src, dst } => b.push_str(
-                format!(
-                    "    movl    {}, {}",
-                    emit_operand(src, false),
-                    emit_operand(dst, false)
-                )
-                .as_str(),
+        let s: String = match instruction {
+            asm::Instruction::Move { src, dst } => format!(
+                "    movl    {}, {}",
+                emit_operand(src, false),
+                emit_operand(dst, false)
             ),
-            asm::Instruction::Ret => b.push_str(
+            asm::Instruction::Ret => String::from(
                 "    movq    %rbp, %rsp
     popq    %rbp
     ret",
             ),
-            asm::Instruction::Unary { op, operand } => b.push_str(
-                format!(
-                    "    {}    {}",
-                    emit_unary_op(op),
-                    emit_operand(operand, false)
-                )
-                .as_str(),
+            asm::Instruction::Unary { op, operand } => format!(
+                "    {}    {}",
+                emit_unary_op(op),
+                emit_operand(operand, false)
             ),
-            asm::Instruction::AllocateStack(i) => {
-                b.push_str(format!("subq    ${i}, %rsp").as_str())
-            }
-            asm::Instruction::Binary { op, left, right } => b.push_str(
-                format!(
-                    "    {}    {}, {}",
-                    emit_binary_op(op),
-                    emit_operand(left, false),
-                    emit_operand(right, false)
-                )
-                .as_str(),
+            asm::Instruction::AllocateStack(i) => format!("subq    ${i}, %rsp"),
+            asm::Instruction::Binary { op, left, right } => format!(
+                "    {}    {}, {}",
+                emit_binary_op(op),
+                emit_operand(left, false),
+                emit_operand(right, false)
             ),
             asm::Instruction::Idiv(operand) => {
-                b.push_str(format!("    idivl    {}", emit_operand(operand, false)).as_str())
+                format!("    idivl    {}", emit_operand(operand, false))
             }
-            asm::Instruction::Cdq => b.push_str(format!("    cdq").as_str()),
-            asm::Instruction::Cmp { left, right } => b.push_str(
-                format!(
-                    "    cmpl    {}, {}",
-                    emit_operand(left, false),
-                    emit_operand(right, false)
-                )
-                .as_str(),
+            asm::Instruction::Cdq => format!("    cdq"),
+            asm::Instruction::Cmp { left, right } => format!(
+                "    cmpl    {}, {}",
+                emit_operand(left, false),
+                emit_operand(right, false)
             ),
-            asm::Instruction::Jmp(l) => b.push_str(format!("    jmp    .L{}", l).as_str()),
-            asm::Instruction::JmpCC { cond_code, target } => b.push_str(
-                format!("    j{}    .L{}", emit_conditional_code(cond_code), target).as_str(),
+            asm::Instruction::Jmp(l) => format!("    jmp    .L{}", l),
+            asm::Instruction::JmpCC { cond_code, target } => {
+                format!("    j{}    .L{}", emit_conditional_code(cond_code), target)
+            }
+            asm::Instruction::SetCC { cond_code, operand } => format!(
+                "    set{}    {}",
+                emit_conditional_code(cond_code),
+                emit_operand(operand, true)
             ),
-            asm::Instruction::SetCC { cond_code, operand } => b.push_str(
-                format!(
-                    "    set{}    {}",
-                    emit_conditional_code(cond_code),
-                    emit_operand(operand, true)
-                )
-                .as_str(),
-            ),
-            asm::Instruction::Label(l) => b.push_str(format!(".L{l}:").as_str()),
+            asm::Instruction::Label(l) => format!(".L{l}:"),
         };
-        b.push_str("\n");
+        b.push_str(&format!("{}\n", &s));
     }
     return b;
 }
