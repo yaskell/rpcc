@@ -64,7 +64,7 @@ fn main() {
         process::exit(0);
     }
 
-    let asm_ast = tacky_ir.into();
+    let asm_ast = asm::translate_program(tacky_ir);
     let (asm_ast, offset) = asm::replace_pseudo_registers(asm_ast);
     let asm_ast = asm::fix_program(asm_ast, offset);
     if let Some(Flag::Codegen) = arguments.flag {

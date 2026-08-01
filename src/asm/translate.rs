@@ -1,5 +1,11 @@
 use crate::{asm, tacky};
 
+pub fn translate_program(program: tacky::Program) -> asm::Program {
+    asm::Program {
+        function: program.function.into(),
+    }
+}
+
 impl From<tacky::Program> for asm::Program {
     fn from(program: tacky::Program) -> asm::Program {
         asm::Program {
