@@ -1,7 +1,15 @@
 use crate::asm;
 use std::collections::HashMap;
 
-pub struct StackAllocator {
+pub fn replace_pseudo_registers(program: asm::Program) -> (asm::Program, i32) {
+    let mut allocator = StackAllocator::new();
+    (
+        allocator.replace_program(program),
+        (allocator.next_offset + 4).abs(),
+    )
+}
+
+struct StackAllocator {
     identifier_offsets: HashMap<String, i32>,
     next_offset: i32,
 }
@@ -25,65 +33,58 @@ impl StackAllocator {
             }
         }
     }
-}
 
-pub fn replace_pseudo_registers(program: asm::Program) -> (asm::Program, i32) {
-    let mut allocator = StackAllocator::new();
-    (
+    fn replace_program(&mut self, program: asm::Program) -> asm::Program {
         asm::Program {
-            function: replace_function(program.function, &mut allocator),
-        },
-        (allocator.next_offset + 4).abs(),
-    )
-}
-
-fn replace_function(function: asm::Function, allocator: &mut StackAllocator) -> asm::Function {
-    asm::Function {
-        name: function.name,
-        instructions: function
-            .instructions
-            .into_iter()
-            .map(|instruction| replace_instruction(instruction, allocator))
-            .collect(),
-    }
-}
-
-fn replace_instruction(
-    instruction: asm::Instruction,
-    allocator: &mut StackAllocator,
-) -> asm::Instruction {
-    match instruction {
-        asm::Instruction::Unary { op, operand } => asm::Instruction::Unary {
-            op,
-            operand: replace_operand(operand, allocator),
-        },
-        asm::Instruction::Move { src, dst } => asm::Instruction::Move {
-            src: replace_operand(src, allocator),
-            dst: replace_operand(dst, allocator),
-        },
-        asm::Instruction::Binary { op, left, right } => asm::Instruction::Binary {
-            op,
-            left: replace_operand(left, allocator),
-            right: replace_operand(right, allocator),
-        },
-        asm::Instruction::Idiv(operand) => {
-            asm::Instruction::Idiv(replace_operand(operand, allocator))
+            function: self.replace_function(program.function),
         }
-        asm::Instruction::Cmp { left, right } => asm::Instruction::Cmp {
-            left: replace_operand(left, allocator),
-            right: replace_operand(right, allocator),
-        },
-        asm::Instruction::SetCC { cond_code, operand } => asm::Instruction::SetCC {
-            cond_code,
-            operand: replace_operand(operand, allocator),
-        },
-        instruction_without_operands => instruction_without_operands,
     }
-}
 
-fn replace_operand(operand: asm::Operand, allocator: &mut StackAllocator) -> asm::Operand {
-    match operand {
-        asm::Operand::Pseudo(name) => asm::Operand::Stack(allocator.offset_for(&name)),
-        other => other,
+    fn replace_function(&mut self, function: asm::Function) -> asm::Function {
+        asm::Function {
+            name: function.name,
+            instructions: function
+                .instructions
+                .into_iter()
+                .map(|instruction| self.replace_instruction(instruction))
+                .collect(),
+        }
+    }
+
+    fn replace_instruction(&mut self, instruction: asm::Instruction) -> asm::Instruction {
+        match instruction {
+            asm::Instruction::Unary { op, operand } => asm::Instruction::Unary {
+                op,
+                operand: self.replace_operand(operand),
+            },
+            asm::Instruction::Move { src, dst } => asm::Instruction::Move {
+                src: self.replace_operand(src),
+                dst: self.replace_operand(dst),
+            },
+            asm::Instruction::Binary { op, left, right } => asm::Instruction::Binary {
+                op,
+                left: self.replace_operand(left),
+                right: self.replace_operand(right),
+            },
+            asm::Instruction::Idiv(operand) => {
+                asm::Instruction::Idiv(self.replace_operand(operand))
+            }
+            asm::Instruction::Cmp { left, right } => asm::Instruction::Cmp {
+                left: self.replace_operand(left),
+                right: self.replace_operand(right),
+            },
+            asm::Instruction::SetCC { cond_code, operand } => asm::Instruction::SetCC {
+                cond_code,
+                operand: self.replace_operand(operand),
+            },
+            instruction_without_operands => instruction_without_operands,
+        }
+    }
+
+    fn replace_operand(&mut self, operand: asm::Operand) -> asm::Operand {
+        match operand {
+            asm::Operand::Pseudo(name) => asm::Operand::Stack(self.offset_for(&name)),
+            other => other,
+        }
     }
 }
