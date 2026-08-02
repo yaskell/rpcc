@@ -9,6 +9,7 @@ use std::env;
 use std::fs;
 use std::process;
 
+use crate::semantic_analysis::label_loops;
 use crate::semantic_analysis::resolve_variables;
 
 fn main() {
@@ -49,6 +50,7 @@ fn main() {
     }
 
     let ast = resolve_variables(ast);
+    let ast = label_loops(ast);
     if let Some(Flag::Validate) = arguments.flag {
         println!("Stopped generating tacky, did semantic analysis");
         println!("Validated file contents:");

@@ -1,4 +1,4 @@
-use crate::parser;
+use crate::{parser, semantic_analysis::loop_labeling};
 
 type Identifier = String;
 type Int = i32;
@@ -74,7 +74,7 @@ pub enum BinaryOp {
     GreaterOrEqual,
 }
 
-pub fn translate_program(program: parser::Program) -> Program {
+pub fn translate_program(program: loop_labeling::LabeledProgram) -> Program {
     TackyTranslator::new().translate_program(program)
 }
 
@@ -91,13 +91,13 @@ impl TackyTranslator {
         }
     }
 
-    fn translate_program(&mut self, program: parser::Program) -> Program {
+    fn translate_program(&mut self, program: loop_labeling::LabeledProgram) -> Program {
         Program {
             function: self.translate_function(program.function),
         }
     }
 
-    fn translate_function(&mut self, function: parser::Function) -> Function {
+    fn translate_function(&mut self, function: loop_labeling::LabeledFunction) -> Function {
         Function {
             identifier: self.translate_identifier(function.name),
             body: function
@@ -114,10 +114,15 @@ impl TackyTranslator {
         identifier
     }
 
-    fn translate_block_item(&mut self, block_item: parser::BlockItem) -> Vec<Instruction> {
+    fn translate_block_item(
+        &mut self,
+        block_item: loop_labeling::LabeledBlockItem,
+    ) -> Vec<Instruction> {
         match block_item {
-            parser::BlockItem::S(statement) => self.translate_statement(statement),
-            parser::BlockItem::D(declaration) => self.translate_declaration(declaration),
+            loop_labeling::LabeledBlockItem::S(statement) => self.translate_statement(statement),
+            loop_labeling::LabeledBlockItem::D(declaration) => {
+                self.translate_declaration(declaration)
+            }
         }
     }
 
@@ -139,18 +144,21 @@ impl TackyTranslator {
         }
     }
 
-    fn translate_statement(&mut self, statement: parser::Statement) -> Vec<Instruction> {
+    fn translate_statement(
+        &mut self,
+        statement: loop_labeling::LabeledStatement,
+    ) -> Vec<Instruction> {
         let mut instructions = Vec::new();
         match statement {
-            parser::Statement::Return(expression) => {
+            loop_labeling::LabeledStatement::Return(expression) => {
                 let value = self.translate_expression(expression, &mut instructions);
                 instructions.push(Instruction::Return(value))
             }
-            parser::Statement::Expression(expression) => {
+            loop_labeling::LabeledStatement::Expression(expression) => {
                 self.translate_expression(expression, &mut instructions);
             }
-            parser::Statement::Null => {}
-            parser::Statement::If {
+            loop_labeling::LabeledStatement::Null => {}
+            loop_labeling::LabeledStatement::If {
                 condition,
                 then,
                 otherwise,
@@ -170,10 +178,7 @@ impl TackyTranslator {
                         instructions.push(Instruction::Jump {
                             target: format!("if_end{}", label_count),
                         });
-                        instructions.push(Instruction::Label(format!(
-                            "if_else{}",
-                            label_count
-                        )));
+                        instructions.push(Instruction::Label(format!("if_else{}", label_count)));
                         instructions.extend(self.translate_statement(*otherwise));
                     }
                     None => {
@@ -184,26 +189,32 @@ impl TackyTranslator {
                         instructions.extend(self.translate_statement(*then));
                     }
                 }
-                instructions.push(Instruction::Label(format!(
-                    "if_end{}",
-                    label_count
-                )));
+                instructions.push(Instruction::Label(format!("if_end{}", label_count)));
             }
-            parser::Statement::Compound(block) => instructions.extend(
+            loop_labeling::LabeledStatement::Compound(block) => instructions.extend(
                 block
                     .0
                     .into_iter()
                     .flat_map(|block_item| self.translate_block_item(block_item)),
             ),
-            parser::Statement::Break => todo!(),
-            parser::Statement::Continue => todo!(),
-            parser::Statement::While { condition: _, body: _ } => todo!(),
-            parser::Statement::DoWhile { condition: _, body: _ } => todo!(),
-            parser::Statement::For {
+            loop_labeling::LabeledStatement::Break(_) => todo!(),
+            loop_labeling::LabeledStatement::Continue(_) => todo!(),
+            loop_labeling::LabeledStatement::While {
+                condition: _,
+                body: _,
+                label: _,
+            } => todo!(),
+            loop_labeling::LabeledStatement::DoWhile {
+                condition: _,
+                body: _,
+                label: _,
+            } => todo!(),
+            loop_labeling::LabeledStatement::For {
                 init: _,
                 condition: _,
                 post: _,
                 body: _,
+                label: _,
             } => todo!(),
         };
         instructions
@@ -280,20 +291,14 @@ impl TackyTranslator {
                         target: format!("and_end{}", label_count),
                     });
 
-                    instructions.push(Instruction::Label(format!(
-                        "and_false{}",
-                        label_count
-                    )));
+                    instructions.push(Instruction::Label(format!("and_false{}", label_count)));
 
                     instructions.push(Instruction::Copy {
                         src: Val::Constant(0),
                         dst: dst.clone(),
                     });
 
-                    instructions.push(Instruction::Label(format!(
-                        "and_end{}",
-                        label_count
-                    )));
+                    instructions.push(Instruction::Label(format!("and_end{}", label_count)));
                     dst
                 }
                 parser::BinaryOp::Or => {
@@ -324,20 +329,14 @@ impl TackyTranslator {
                         target: format!("or_end{}", label_count),
                     });
 
-                    instructions.push(Instruction::Label(format!(
-                        "or_false{}",
-                        label_count
-                    )));
+                    instructions.push(Instruction::Label(format!("or_false{}", label_count)));
 
                     instructions.push(Instruction::Copy {
                         src: Val::Constant(1),
                         dst: dst.clone(),
                     });
 
-                    instructions.push(Instruction::Label(format!(
-                        "or_end{}",
-                        label_count
-                    )));
+                    instructions.push(Instruction::Label(format!("or_end{}", label_count)));
                     dst
                 }
                 other_operator => {
@@ -415,10 +414,7 @@ impl TackyTranslator {
                     dst: dst.clone(),
                 });
 
-                instructions.push(Instruction::Label(format!(
-                    "ternary_end{}",
-                    label_count
-                )));
+                instructions.push(Instruction::Label(format!("ternary_end{}", label_count)));
                 dst
             }
         }
