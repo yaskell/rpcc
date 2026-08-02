@@ -37,6 +37,11 @@ pub enum Token {
     Else,
     QuestionMark,
     Colon,
+    Do,
+    While,
+    For,
+    Break,
+    Continue,
 }
 
 impl Token {
@@ -85,6 +90,26 @@ pub static KEYWORD_TOKENS_DEFINITIONS: LazyLock<Vec<TokenDefinition>> = LazyLock
         TokenDefinition {
             token_type: Token::Else,
             regex: Regex::new(r"^else\b").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::Do,
+            regex: Regex::new(r"^do\b").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::While,
+            regex: Regex::new(r"^while\b").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::For,
+            regex: Regex::new(r"^for\b").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::Break,
+            regex: Regex::new(r"^break\b").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::Continue,
+            regex: Regex::new(r"^continue\b").unwrap(),
         },
     ]
 });
