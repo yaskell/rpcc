@@ -163,6 +163,16 @@ pub fn resolve_statement(statement: parser::Statement, va: &mut VarAllocator) ->
             var_allocator.map = copy_variable_map(var_allocator.map);
             parser::Statement::Compound(resolve_block(block, &mut var_allocator))
         }
+        parser::Statement::Break => todo!(),
+        parser::Statement::Continue => todo!(),
+        parser::Statement::While { condition, body } => todo!(),
+        parser::Statement::DoWhile { condition, body } => todo!(),
+        parser::Statement::For {
+            init,
+            condition,
+            post,
+            body,
+        } => todo!(),
     }
 }
 

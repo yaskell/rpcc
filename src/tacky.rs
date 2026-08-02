@@ -195,6 +195,16 @@ impl TackyTranslator {
                     .into_iter()
                     .flat_map(|block_item| self.translate_block_item(block_item)),
             ),
+            parser::Statement::Break => todo!(),
+            parser::Statement::Continue => todo!(),
+            parser::Statement::While { condition, body } => todo!(),
+            parser::Statement::DoWhile { condition, body } => todo!(),
+            parser::Statement::For {
+                init,
+                condition,
+                post,
+                body,
+            } => todo!(),
         };
         instructions
     }

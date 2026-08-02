@@ -112,6 +112,22 @@ pub enum Statement {
         otherwise: Option<Box<Statement>>,
     },
     Compound(Block),
+    Break,
+    Continue,
+    While {
+        condition: Expression,
+        body: Box<Statement>,
+    },
+    DoWhile {
+        condition: Expression,
+        body: Box<Statement>,
+    },
+    For {
+        init: ForInit,
+        condition: Option<Expression>,
+        post: Option<Expression>,
+        body: Box<Statement>,
+    },
     Null,
 }
 
@@ -135,8 +151,7 @@ impl Statement {
                 consume(Token::CloseParan, tokens);
                 let then = Statement::parse(tokens);
                 let mut otherwise = None;
-
-                if Some(&Token::Else) == tokens.first() {
+                if tokens.first() == Some(&Token::Else) {
                     consume(Token::Else, tokens);
                     otherwise = Some(Statement::parse(tokens));
                 }
@@ -146,12 +161,78 @@ impl Statement {
                     otherwise: otherwise.map(Box::new),
                 }
             }
+            Token::Break => {
+                consume(Token::Break, tokens);
+                consume(Token::Semicolon, tokens);
+                Statement::Break
+            }
+            Token::Continue => {
+                consume(Token::Continue, tokens);
+                consume(Token::Semicolon, tokens);
+                Statement::Continue
+            }
+            Token::While => {
+                consume(Token::While, tokens);
+                consume(Token::OpenParan, tokens);
+                let condition = Expression::parse(tokens, 0);
+                consume(Token::CloseParan, tokens);
+                let body = Box::new(Statement::parse(tokens));
+                Statement::While { condition, body }
+            }
+            Token::Do => {
+                consume(Token::Do, tokens);
+                let body = Box::new(Statement::parse(tokens));
+                consume(Token::While, tokens);
+                consume(Token::OpenParan, tokens);
+                let condition = Expression::parse(tokens, 0);
+                consume(Token::CloseParan, tokens);
+                consume(Token::Semicolon, tokens);
+                Statement::DoWhile { condition, body }
+            }
+            Token::For => {
+                consume(Token::For, tokens);
+                consume(Token::OpenParan, tokens);
+                let init = ForInit::parse(tokens);
+                let condition = Expression::parse_optional(tokens, Token::Semicolon);
+                consume(Token::Semicolon, tokens);
+                let post = Expression::parse_optional(tokens, Token::CloseParan);
+                consume(Token::CloseParan, tokens);
+                let body = Box::new(Statement::parse(tokens));
+                Statement::For {
+                    init,
+                    condition,
+                    post,
+                    body,
+                }
+            }
             Token::OpenBrace => Statement::Compound(Block::parse(tokens)),
-            _ => {
+            _exp => {
                 let expression = Expression::parse(tokens, 0);
                 consume(Token::Semicolon, tokens);
                 Statement::Expression(expression)
             }
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum ForInit {
+    D(Declaration),
+    E(Option<Expression>),
+}
+
+impl ForInit {
+    fn parse(tokens: &mut Vec<Token>) -> ForInit {
+        if tokens.first() == Some(&Token::Int) {
+            return ForInit::D(Declaration::parse(tokens));
+        }
+
+        if let Some(e) = Expression::parse_optional(tokens, Token::Semicolon) {
+            consume(Token::Semicolon, tokens);
+            ForInit::E(Some(e))
+        } else {
+            consume(Token::Semicolon, tokens);
+            ForInit::E(None)
         }
     }
 }
@@ -231,6 +312,14 @@ impl Expression {
         }
 
         left
+    }
+
+    fn parse_optional(tokens: &mut Vec<Token>, end_token: Token) -> Option<Expression> {
+        if tokens.first() == Some(&end_token) {
+            None
+        } else {
+            Some(Expression::parse(tokens, 0))
+        }
     }
 
     fn parse_factor(tokens: &mut Vec<Token>) -> Expression {
