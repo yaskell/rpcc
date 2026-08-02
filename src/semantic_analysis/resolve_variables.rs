@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::parser;
+use crate::parser::{self, ForInit};
 
 #[derive(Debug, Clone)]
 pub struct VarAllocator {
@@ -56,7 +56,7 @@ pub fn resolve_variables(program: parser::Program) -> parser::Program {
 
 pub fn resolve_function(
     parser::Function { name, body }: parser::Function,
-    mut va: &mut VarAllocator,
+    va: &mut VarAllocator,
 ) -> parser::Function {
     parser::Function {
         name,
@@ -145,7 +145,6 @@ pub fn resolve_statement(statement: parser::Statement, va: &mut VarAllocator) ->
     match statement {
         parser::Statement::Return(exp) => parser::Statement::Return(resolve_exp(exp, va)),
         parser::Statement::Expression(exp) => parser::Statement::Expression(resolve_exp(exp, va)),
-        parser::Statement::Null => parser::Statement::Null,
         parser::Statement::If {
             condition,
             then,
@@ -160,17 +159,47 @@ pub fn resolve_statement(statement: parser::Statement, va: &mut VarAllocator) ->
             var_allocator.map = copy_variable_map(var_allocator.map);
             parser::Statement::Compound(resolve_block(block, &mut var_allocator))
         }
-        parser::Statement::Break => todo!(),
-        parser::Statement::Continue => todo!(),
-        parser::Statement::While { condition: _, body: _ } => todo!(),
-        parser::Statement::DoWhile { condition: _, body: _ } => todo!(),
+        parser::Statement::While { condition, body } => parser::Statement::While {
+            condition: resolve_exp(condition, va),
+            body: Box::new(resolve_statement(*body, va)),
+        },
+        parser::Statement::DoWhile { condition, body } => parser::Statement::DoWhile {
+            condition: resolve_exp(condition, va),
+            body: Box::new(resolve_statement(*body, va)),
+        },
         parser::Statement::For {
-            init: _,
-            condition: _,
-            post: _,
-            body: _,
-        } => todo!(),
+            init,
+            condition,
+            post,
+            body,
+        } => {
+            let mut new_va = va.clone();
+            new_va.map = copy_variable_map(new_va.map);
+            parser::Statement::For {
+                init: resolve_for_init(init, &mut new_va),
+                condition: resolve_optional_exp(condition, &mut new_va),
+                post: resolve_optional_exp(post, &mut new_va),
+                body: Box::new(resolve_statement(*body, &mut new_va)),
+            }
+        }
+        statement_without_substatement_or_subexpression @ (parser::Statement::Null
+        | parser::Statement::Break
+        | parser::Statement::Continue) => statement_without_substatement_or_subexpression,
     }
+}
+
+fn resolve_for_init(init: ForInit, va: &mut VarAllocator) -> ForInit {
+    match init {
+        ForInit::D(dec) => ForInit::D(resolve_declaration(dec, va)),
+        ForInit::E(exp) => ForInit::E(resolve_optional_exp(exp, va)),
+    }
+}
+
+fn resolve_optional_exp(
+    exp: Option<parser::Expression>,
+    va: &mut VarAllocator,
+) -> Option<parser::Expression> {
+    exp.map(|e| resolve_exp(e, va))
 }
 
 pub fn copy_variable_map(map: HashMap<String, MapEntry>) -> HashMap<String, MapEntry> {
