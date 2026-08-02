@@ -11,7 +11,7 @@ pub fn emit(program: asm::Program) -> String {
 }
 
 fn emit_function(fun: asm::Function) -> String {
-    return format!(
+    format!(
         "    .globl {}
   {}:
     pushq   %rbp
@@ -21,7 +21,7 @@ fn emit_function(fun: asm::Function) -> String {
         fun.name,
         fun.name,
         emit_instructions(fun.instructions)
-    );
+    )
 }
 
 fn emit_instructions(instructions: Vec<asm::Instruction>) -> String {
@@ -53,7 +53,7 @@ fn emit_instructions(instructions: Vec<asm::Instruction>) -> String {
             asm::Instruction::Idiv(operand) => {
                 format!("    idivl    {}", emit_operand(operand, false))
             }
-            asm::Instruction::Cdq => format!("    cdq"),
+            asm::Instruction::Cdq => "    cdq".to_string(),
             asm::Instruction::Cmp { left, right } => format!(
                 "    cmpl    {}, {}",
                 emit_operand(left, false),
@@ -72,7 +72,7 @@ fn emit_instructions(instructions: Vec<asm::Instruction>) -> String {
         };
         b.push_str(&format!("{}\n", &s));
     }
-    return b;
+    b
 }
 
 fn emit_operand(operand: asm::Operand, emit_one_byte_register: bool) -> String {

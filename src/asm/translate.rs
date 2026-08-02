@@ -21,7 +21,7 @@ impl From<tacky::Function> for asm::Function {
             instructions: function
                 .body
                 .into_iter()
-                .flat_map(|i| translate_instruction(i))
+                .flat_map(translate_instruction)
                 .collect(),
         }
     }
@@ -130,7 +130,7 @@ fn translate_instruction(instruction: tacky::Instruction) -> Vec<asm::Instructio
                     dst: dst.clone().into(),
                 });
                 asm_instructions.push(asm::Instruction::Binary {
-                    op: op,
+                    op,
                     left: right.into(),
                     right: dst.into(),
                 });

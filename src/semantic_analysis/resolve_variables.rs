@@ -28,7 +28,7 @@ impl VarAllocator {
 
     fn new_var(&mut self, var: String) -> String {
         match self.map.get(&var) {
-            Some(v) if v.from_current_block == true => {
+            Some(v) if v.from_current_block => {
                 panic!("Duplicate variable declaration: {var}")
             }
             _ => {
@@ -60,7 +60,7 @@ pub fn resolve_function(
 ) -> parser::Function {
     parser::Function {
         name,
-        body: resolve_block(body, &mut va),
+        body: resolve_block(body, va),
     }
 }
 
@@ -112,7 +112,7 @@ pub fn resolve_exp(exp: parser::Expression, va: &mut VarAllocator) -> parser::Ex
             Some(MapEntry {
                 new_name,
                 from_current_block: _,
-            }) => return parser::Expression::Var(new_name.clone()),
+            }) => parser::Expression::Var(new_name.clone()),
             None => panic!("Undeclared variable: `{}`", v),
         },
         parser::Expression::Unary { operator, operand } => parser::Expression::Unary {
@@ -153,10 +153,7 @@ pub fn resolve_statement(statement: parser::Statement, va: &mut VarAllocator) ->
         } => parser::Statement::If {
             condition: resolve_exp(condition, va),
             then: Box::new(resolve_statement(*then, va)),
-            otherwise: match otherwise {
-                Some(statement) => Some(Box::new(resolve_statement(*statement, va))),
-                None => None,
-            },
+            otherwise: otherwise.map(|statement| Box::new(resolve_statement(*statement, va))),
         },
         parser::Statement::Compound(block) => {
             let mut var_allocator = va.clone();
@@ -165,13 +162,13 @@ pub fn resolve_statement(statement: parser::Statement, va: &mut VarAllocator) ->
         }
         parser::Statement::Break => todo!(),
         parser::Statement::Continue => todo!(),
-        parser::Statement::While { condition, body } => todo!(),
-        parser::Statement::DoWhile { condition, body } => todo!(),
+        parser::Statement::While { condition: _, body: _ } => todo!(),
+        parser::Statement::DoWhile { condition: _, body: _ } => todo!(),
         parser::Statement::For {
-            init,
-            condition,
-            post,
-            body,
+            init: _,
+            condition: _,
+            post: _,
+            body: _,
         } => todo!(),
     }
 }

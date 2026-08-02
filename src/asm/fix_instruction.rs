@@ -14,7 +14,7 @@ pub fn fix_function(function: asm::Function, offset: i32) -> asm::Function {
                 function
                     .instructions
                     .into_iter()
-                    .flat_map(|instruction| fix_instruction(instruction)),
+                    .flat_map(fix_instruction),
             )
             .collect(),
     }
@@ -100,7 +100,7 @@ pub fn fix_instruction(instruction: asm::Instruction) -> Vec<asm::Instruction> {
                 },
                 asm::Instruction::Cmp {
                     left: asm::Operand::Register(asm::Register::R10),
-                    right: right,
+                    right,
                 },
             ]
         }

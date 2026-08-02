@@ -163,31 +163,31 @@ impl TackyTranslator {
                     Some(otherwise) => {
                         instructions.push(Instruction::JumpIfZero {
                             condition: c,
-                            target: String::from(format!("if_else{}", label_count)),
+                            target: format!("if_else{}", label_count),
                         });
                         instructions.extend(self.translate_statement(*then));
 
                         instructions.push(Instruction::Jump {
-                            target: String::from(format!("if_end{}", label_count)),
+                            target: format!("if_end{}", label_count),
                         });
-                        instructions.push(Instruction::Label(String::from(format!(
+                        instructions.push(Instruction::Label(format!(
                             "if_else{}",
                             label_count
-                        ))));
+                        )));
                         instructions.extend(self.translate_statement(*otherwise));
                     }
                     None => {
                         instructions.push(Instruction::JumpIfZero {
                             condition: c,
-                            target: String::from(format!("if_end{}", label_count)),
+                            target: format!("if_end{}", label_count),
                         });
                         instructions.extend(self.translate_statement(*then));
                     }
                 }
-                instructions.push(Instruction::Label(String::from(format!(
+                instructions.push(Instruction::Label(format!(
                     "if_end{}",
                     label_count
-                ))));
+                )));
             }
             parser::Statement::Compound(block) => instructions.extend(
                 block
@@ -197,13 +197,13 @@ impl TackyTranslator {
             ),
             parser::Statement::Break => todo!(),
             parser::Statement::Continue => todo!(),
-            parser::Statement::While { condition, body } => todo!(),
-            parser::Statement::DoWhile { condition, body } => todo!(),
+            parser::Statement::While { condition: _, body: _ } => todo!(),
+            parser::Statement::DoWhile { condition: _, body: _ } => todo!(),
             parser::Statement::For {
-                init,
-                condition,
-                post,
-                body,
+                init: _,
+                condition: _,
+                post: _,
+                body: _,
             } => todo!(),
         };
         instructions
@@ -262,13 +262,13 @@ impl TackyTranslator {
                     let left = self.translate_expression(*left_expression, instructions);
                     instructions.push(Instruction::JumpIfZero {
                         condition: left,
-                        target: String::from(format!("and_false{}", label_count)),
+                        target: format!("and_false{}", label_count),
                     });
 
                     let right = self.translate_expression(*right_expression, instructions);
                     instructions.push(Instruction::JumpIfZero {
                         condition: right,
-                        target: String::from(format!("and_false{}", label_count)),
+                        target: format!("and_false{}", label_count),
                     });
 
                     instructions.push(Instruction::Copy {
@@ -277,23 +277,23 @@ impl TackyTranslator {
                     });
 
                     instructions.push(Instruction::Jump {
-                        target: String::from(format!("and_end{}", label_count)),
+                        target: format!("and_end{}", label_count),
                     });
 
-                    instructions.push(Instruction::Label(String::from(format!(
+                    instructions.push(Instruction::Label(format!(
                         "and_false{}",
                         label_count
-                    ))));
+                    )));
 
                     instructions.push(Instruction::Copy {
                         src: Val::Constant(0),
                         dst: dst.clone(),
                     });
 
-                    instructions.push(Instruction::Label(String::from(format!(
+                    instructions.push(Instruction::Label(format!(
                         "and_end{}",
                         label_count
-                    ))));
+                    )));
                     dst
                 }
                 parser::BinaryOp::Or => {
@@ -306,13 +306,13 @@ impl TackyTranslator {
                     let left = self.translate_expression(*left_expression, instructions);
                     instructions.push(Instruction::JumpIfNotZero {
                         condition: left,
-                        target: String::from(format!("or_false{}", label_count)),
+                        target: format!("or_false{}", label_count),
                     });
 
                     let right = self.translate_expression(*right_expression, instructions);
                     instructions.push(Instruction::JumpIfNotZero {
                         condition: right,
-                        target: String::from(format!("or_false{}", label_count)),
+                        target: format!("or_false{}", label_count),
                     });
 
                     instructions.push(Instruction::Copy {
@@ -321,23 +321,23 @@ impl TackyTranslator {
                     });
 
                     instructions.push(Instruction::Jump {
-                        target: String::from(format!("or_end{}", label_count)),
+                        target: format!("or_end{}", label_count),
                     });
 
-                    instructions.push(Instruction::Label(String::from(format!(
+                    instructions.push(Instruction::Label(format!(
                         "or_false{}",
                         label_count
-                    ))));
+                    )));
 
                     instructions.push(Instruction::Copy {
                         src: Val::Constant(1),
                         dst: dst.clone(),
                     });
 
-                    instructions.push(Instruction::Label(String::from(format!(
+                    instructions.push(Instruction::Label(format!(
                         "or_end{}",
                         label_count
-                    ))));
+                    )));
                     dst
                 }
                 other_operator => {
@@ -391,7 +391,7 @@ impl TackyTranslator {
 
                 instructions.push(Instruction::JumpIfZero {
                     condition,
-                    target: String::from(format!("ternary_otherwise{}", label_count)),
+                    target: format!("ternary_otherwise{}", label_count),
                 });
 
                 let e1 = self.translate_expression(*then, instructions);
@@ -401,13 +401,13 @@ impl TackyTranslator {
                 });
 
                 instructions.push(Instruction::Jump {
-                    target: String::from(format!("ternary_end{}", label_count)),
+                    target: format!("ternary_end{}", label_count),
                 });
 
-                instructions.push(Instruction::Label(String::from(format!(
+                instructions.push(Instruction::Label(format!(
                     "ternary_otherwise{}",
                     label_count
-                ))));
+                )));
 
                 let e2 = self.translate_expression(*otherwise, instructions);
                 instructions.push(Instruction::Copy {
@@ -415,10 +415,10 @@ impl TackyTranslator {
                     dst: dst.clone(),
                 });
 
-                instructions.push(Instruction::Label(String::from(format!(
+                instructions.push(Instruction::Label(format!(
                     "ternary_end{}",
                     label_count
-                ))));
+                )));
                 dst
             }
         }

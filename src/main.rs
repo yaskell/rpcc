@@ -75,7 +75,7 @@ fn main() {
     }
 
     let program = code_emission::emit(asm_ast);
-    if let Ok(_) = fs::write(format!("{filename_base}.s"), program) {
+    if fs::write(format!("{filename_base}.s"), program).is_ok() {
         run_command(
             "gcc",
             &[format!("{filename_base}.s").as_str(), "-o", filename_base],
