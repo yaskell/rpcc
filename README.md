@@ -36,6 +36,7 @@ preprocessor, assembler and linker.
   `... ? ... : ...`.
 - Scopes: Create new scopes using blocks `{ ... }` in functions and as compound
   statements.
+- Loops: Supports `for`, `while` and `do` loops.
 - ...more features in progress
 
 ## Getting started
