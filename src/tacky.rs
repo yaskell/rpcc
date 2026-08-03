@@ -197,27 +197,93 @@ impl TackyTranslator {
                     .into_iter()
                     .flat_map(|block_item| self.translate_block_item(block_item)),
             ),
-            loop_labeling::LabeledStatement::Break(_) => todo!(),
-            loop_labeling::LabeledStatement::Continue(_) => todo!(),
+            loop_labeling::LabeledStatement::Break(label) => {
+                instructions.push(Instruction::Jump {
+                    target: format!("break_{}", label),
+                });
+            }
+            loop_labeling::LabeledStatement::Continue(label) => {
+                instructions.push(Instruction::Jump {
+                    target: format!("continue_{}", label),
+                });
+            }
             loop_labeling::LabeledStatement::While {
-                condition: _,
-                body: _,
-                label: _,
-            } => todo!(),
+                condition,
+                body,
+                label,
+            } => {
+                instructions.push(Instruction::Label(format!("continue_{}", label)));
+                let c = self.translate_expression(condition, &mut instructions);
+                instructions.push(Instruction::JumpIfZero {
+                    condition: c,
+                    target: format!("break_{}", label),
+                });
+                instructions.extend(self.translate_statement(*body));
+                instructions.push(Instruction::Jump {
+                    target: format!("continue_{}", label),
+                });
+                instructions.push(Instruction::Label(format!("break_{}", label)));
+            }
             loop_labeling::LabeledStatement::DoWhile {
-                condition: _,
-                body: _,
-                label: _,
-            } => todo!(),
+                condition,
+                body,
+                label,
+            } => {
+                instructions.push(Instruction::Label(format!("start_{}", label)));
+                instructions.extend(self.translate_statement(*body));
+                instructions.push(Instruction::Label(format!("continue_{}", label)));
+                let c = self.translate_expression(condition, &mut instructions);
+                instructions.push(Instruction::JumpIfNotZero {
+                    condition: c,
+                    target: format!("start_{}", label),
+                });
+                instructions.push(Instruction::Label(format!("break_{}", label)));
+            }
             loop_labeling::LabeledStatement::For {
-                init: _,
-                condition: _,
-                post: _,
-                body: _,
-                label: _,
-            } => todo!(),
+                init,
+                condition,
+                post,
+                body,
+                label,
+            } => {
+                let init = self.translate_for_init(init, &mut instructions);
+                instructions.extend(init);
+                instructions.push(Instruction::Label(format!("start_{}", label)));
+                if let Some(condition) = condition {
+                    let c = self.translate_expression(condition, &mut instructions);
+                    instructions.push(Instruction::JumpIfZero {
+                        condition: c,
+                        target: format!("break_{}", label),
+                    });
+                };
+                instructions.extend(self.translate_statement(*body));
+                instructions.push(Instruction::Label(format!("continue_{}", label)));
+                if let Some(exp) = post {
+                    self.translate_expression(exp, &mut instructions);
+                }
+                instructions.push(Instruction::Jump {
+                    target: format!("start_{}", label),
+                });
+                instructions.push(Instruction::Label(format!("break_{}", label)));
+            }
         };
         instructions
+    }
+
+    fn translate_for_init(
+        &mut self,
+        init: parser::ForInit,
+        instructions: &mut Vec<Instruction>,
+    ) -> Vec<Instruction> {
+        match init {
+            parser::ForInit::D(declaration) => self.translate_declaration(declaration),
+            parser::ForInit::E(expression) => {
+                if let Some(e) = expression {
+                    self.translate_expression(e, instructions);
+                }
+                vec![]
+            }
+        }
     }
 
     fn translate_expression(

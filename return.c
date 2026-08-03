@@ -1,13 +1,7 @@
 int main(void) {
-    int a = 0;
-    {
-        int a = 1;
-    }
-    {
-        int a = 2;
-        {
-            int a = 3;
-        }
-    }
+    int a = 10;
+    do
+        break;
+    while ((a = 1));
     return a;
 }
