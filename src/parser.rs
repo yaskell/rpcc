@@ -43,7 +43,7 @@ impl Block {
     fn parse(tokens: &mut Vec<Token>) -> Block {
         consume(Token::OpenBrace, tokens);
         let mut block_items = Vec::new();
-        while tokens.first().is_some_and(|x| *x != Token::CloseBrace) {
+        while tokens.first() != Some(&Token::CloseBrace) {
             block_items.push(BlockItem::parse(tokens))
         }
         consume(Token::CloseBrace, tokens);
