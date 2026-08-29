@@ -42,6 +42,7 @@ pub enum Token {
     For,
     Break,
     Continue,
+    Comma,
 }
 
 impl Token {
@@ -219,6 +220,10 @@ pub static OTHER_TOKENS_DEFINITIONS: LazyLock<Vec<TokenDefinition>> = LazyLock::
         TokenDefinition {
             token_type: Token::Colon,
             regex: Regex::new(r"^:").unwrap(),
+        },
+        TokenDefinition {
+            token_type: Token::Comma,
+            regex: Regex::new(r"^,").unwrap(),
         },
     ]
 });
