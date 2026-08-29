@@ -78,11 +78,24 @@ fn main() {
 
     let program = code_emission::emit(asm_ast);
     if fs::write(format!("{filename_base}.s"), program).is_ok() {
-        run_command(
-            "gcc",
-            &[format!("{filename_base}.s").as_str(), "-o", filename_base],
-        )
-        .expect("Linking failed");
+        if let Some(Flag::Object) = arguments.flag {
+            run_command(
+                "gcc",
+                &[
+                    "-c",
+                    format!("{filename_base}.s").as_str(),
+                    "-o",
+                    format!("{filename_base}.o").as_str(),
+                ],
+            )
+            .expect("Linking failed");
+        } else {
+            run_command(
+                "gcc",
+                &[format!("{filename_base}.s").as_str(), "-o", filename_base],
+            )
+            .expect("Linking failed");
+        }
 
         if let Some(Flag::Assembly) = arguments.flag {
             process::exit(0);
@@ -103,6 +116,7 @@ enum Flag {
     Codegen,
     Assembly,
     Tacky,
+    Object,
 }
 
 struct Arguments {
@@ -138,6 +152,7 @@ impl Arguments {
                 "--codegen" => Some(Flag::Codegen),
                 "-S" => Some(Flag::Assembly),
                 "--tacky" => Some(Flag::Tacky),
+                "-c" => Some(Flag::Object),
                 _ => {
                     eprintln!("ERROR: flag `{}` not recognized", args[1].as_str());
                     usage_message();
@@ -160,6 +175,7 @@ Options:
     --tacky      Run tacky compiler pass, stop before assembly generation
     --codegen    Run up to assembly generation and print result
     -S           Emit assembly file (.s) but do not remove it
+    -S           Emit object file (.o)
     --help       Show this help message
 "
     );
