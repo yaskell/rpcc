@@ -1,16 +1,16 @@
-mod asm;
-mod code_emission;
+//mod asm;
+//mod code_emission;
 mod lexer;
 mod parser;
-mod semantic_analysis;
-mod tacky;
+//mod semantic_analysis;
+//mod tacky;
 
 use std::env;
 use std::fs;
 use std::process;
 
-use crate::semantic_analysis::label_loops;
-use crate::semantic_analysis::resolve_variables;
+//use crate::semantic_analysis::label_loops;
+//use crate::semantic_analysis::resolve_variables;
 
 fn main() {
     let arguments = Arguments::new(&env::args().collect::<Vec<String>>());
@@ -49,63 +49,63 @@ fn main() {
         process::exit(0);
     }
 
-    let ast = resolve_variables(ast);
-    let ast = label_loops(ast);
-    if let Some(Flag::Validate) = arguments.flag {
-        println!("Stopped generating tacky, did semantic analysis");
-        println!("Validated file contents:");
-        dbg!(&ast);
-        process::exit(0);
-    }
-
-    let tacky_ir = tacky::translate_program(ast);
-    if let Some(Flag::Tacky) = arguments.flag {
-        println!("Stopped before generating assembly, ran tacky compilation pass");
-        println!("Parsed file contents:");
-        dbg!(&tacky_ir);
-        process::exit(0);
-    }
-
-    let asm_ast = asm::translate_program(tacky_ir);
-    let (asm_ast, offset) = asm::replace_pseudo_registers(asm_ast);
-    let asm_ast = asm::fix_program(asm_ast, offset);
-    if let Some(Flag::Codegen) = arguments.flag {
-        println!("Stopped before code emission");
-        println!("Assembly Generation:");
-        dbg!(&asm_ast);
-        process::exit(0);
-    }
-
-    let program = code_emission::emit(asm_ast);
-    if fs::write(format!("{filename_base}.s"), program).is_ok() {
-        if let Some(Flag::Object) = arguments.flag {
-            run_command(
-                "gcc",
-                &[
-                    "-c",
-                    format!("{filename_base}.s").as_str(),
-                    "-o",
-                    format!("{filename_base}.o").as_str(),
-                ],
-            )
-            .expect("Linking failed");
-        } else {
-            run_command(
-                "gcc",
-                &[format!("{filename_base}.s").as_str(), "-o", filename_base],
-            )
-            .expect("Linking failed");
-        }
-
-        if let Some(Flag::Assembly) = arguments.flag {
-            process::exit(0);
-        }
-
-        let _ = fs::remove_file(format!("{filename_base}.s").as_str());
-
-        process::exit(0);
-    }
-
+    //     let ast = resolve_identifiers(ast);
+    //     let ast = label_loops(ast);
+    //     if let Some(Flag::Validate) = arguments.flag {
+    //         println!("Stopped generating tacky, did semantic analysis");
+    //         println!("Validated file contents:");
+    //         dbg!(&ast);
+    //         process::exit(0);
+    //     }
+    //
+    //     let tacky_ir = tacky::translate_program(ast);
+    //     if let Some(Flag::Tacky) = arguments.flag {
+    //         println!("Stopped before generating assembly, ran tacky compilation pass");
+    //         println!("Parsed file contents:");
+    //         dbg!(&tacky_ir);
+    //         process::exit(0);
+    //     }
+    //
+    //     let asm_ast = asm::translate_program(tacky_ir);
+    //     let (asm_ast, offset) = asm::replace_pseudo_registers(asm_ast);
+    //     let asm_ast = asm::fix_program(asm_ast, offset);
+    //     if let Some(Flag::Codegen) = arguments.flag {
+    //         println!("Stopped before code emission");
+    //         println!("Assembly Generation:");
+    //         dbg!(&asm_ast);
+    //         process::exit(0);
+    //     }
+    //
+    //     let program = code_emission::emit(asm_ast);
+    //     if fs::write(format!("{filename_base}.s"), program).is_ok() {
+    //         if let Some(Flag::Object) = arguments.flag {
+    //             run_command(
+    //                 "gcc",
+    //                 &[
+    //                     "-c",
+    //                     format!("{filename_base}.s").as_str(),
+    //                     "-o",
+    //                     format!("{filename_base}.o").as_str(),
+    //                 ],
+    //             )
+    //             .expect("Linking failed");
+    //         } else {
+    //             run_command(
+    //                 "gcc",
+    //                 &[format!("{filename_base}.s").as_str(), "-o", filename_base],
+    //             )
+    //             .expect("Linking failed");
+    //         }
+    //
+    //         if let Some(Flag::Assembly) = arguments.flag {
+    //             process::exit(0);
+    //         }
+    //
+    //         let _ = fs::remove_file(format!("{filename_base}.s").as_str());
+    //
+    //         process::exit(0);
+    //     }
+    //
     process::exit(1);
 }
 
