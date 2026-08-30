@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::parser;
 
-pub fn resolve_variables(program: parser::Program) -> parser::Program {
+pub fn resolve_identifiers(program: parser::Program) -> parser::Program {
     let mut allocator = IdentifierAllocator::new();
 
     parser::Program {

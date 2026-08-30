@@ -10,7 +10,7 @@ use std::fs;
 use std::process;
 
 use crate::semantic_analysis::label_loops;
-use crate::semantic_analysis::resolve_variables;
+use crate::semantic_analysis::resolve_identifiers;
 
 fn main() {
     let arguments = Arguments::new(&env::args().collect::<Vec<String>>());
@@ -49,7 +49,7 @@ fn main() {
         process::exit(0);
     }
 
-    let ast = resolve_variables(ast);
+    let ast = resolve_identifiers(ast);
     let ast = label_loops(ast);
     if let Some(Flag::Validate) = arguments.flag {
         println!("Stopped generating tacky, did semantic analysis");
