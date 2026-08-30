@@ -1,123 +1,196 @@
 use std::collections::HashMap;
 
-use crate::parser::{self, ForInit};
-
-#[derive(Debug, Clone)]
-pub struct VarAllocator {
-    pub var_count: i32,
-    pub map: HashMap<String, MapEntry>,
-}
-
-#[derive(Debug, Clone)]
-pub struct MapEntry {
-    pub new_name: String,
-    pub from_current_block: bool,
-}
-
-impl VarAllocator {
-    fn new() -> VarAllocator {
-        VarAllocator {
-            var_count: 0,
-            map: HashMap::<String, MapEntry>::new(),
-        }
-    }
-
-    fn new_unique_name(&self, var: &str) -> String {
-        format!("{}.{}", var, self.var_count)
-    }
-
-    fn new_var(&mut self, var: String) -> String {
-        match self.map.get(&var) {
-            Some(v) if v.from_current_block => {
-                panic!("Duplicate variable declaration: {var}")
-            }
-            _ => {
-                let name = VarAllocator::new_unique_name(self, var.as_str());
-                self.map.insert(
-                    var.clone(),
-                    MapEntry {
-                        new_name: name.clone(),
-                        from_current_block: true,
-                    },
-                );
-                self.var_count += 1;
-                name
-            }
-        }
-    }
-}
+use crate::parser;
 
 pub fn resolve_variables(program: parser::Program) -> parser::Program {
-    let mut va = VarAllocator::new();
+    let mut allocator = IdentifierAllocator::new();
+
     parser::Program {
-        function: resolve_function(program.function, &mut va),
+        functions: program
+            .functions
+            .into_iter()
+            .map(|f| resolve_function_declaration(f, &mut allocator))
+            .collect(),
     }
 }
 
-pub fn resolve_function(
-    parser::Function { name, body }: parser::Function,
-    va: &mut VarAllocator,
-) -> parser::Function {
-    parser::Function {
-        name,
-        body: resolve_block(body, va),
+#[derive(Debug, Clone)]
+pub struct IdentifierAllocator {
+    pub identifier_count: i32,
+    pub map: HashMap<String, IdentifierData>,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum Linkage {
+    ExternalLinkage,
+    NoLinkage,
+}
+
+#[derive(Debug, Clone)]
+pub struct IdentifierData {
+    pub name: String,
+    pub from_current_scope: bool,
+    pub linkage: Linkage,
+}
+
+impl IdentifierAllocator {
+    fn new() -> IdentifierAllocator {
+        IdentifierAllocator {
+            identifier_count: 0,
+            map: HashMap::<String, IdentifierData>::new(),
+        }
+    }
+
+    fn new_name(&self, var: &str) -> String {
+        format!("{}.{}", var, self.identifier_count)
+    }
+
+    fn allocate_identifier(&mut self, identifier: String, linkage: Linkage) -> String {
+        match self.map.get(&identifier) {
+            Some(v) if v.from_current_scope && v.linkage != Linkage::ExternalLinkage => {
+                panic!("Duplicate declaration: {identifier}")
+            }
+            _not_in_map => {
+                let identifier_name = match linkage {
+                    Linkage::ExternalLinkage => identifier.clone(),
+                    Linkage::NoLinkage => self.new_name(&identifier.clone()),
+                };
+
+                let identifier_data = IdentifierData {
+                    name: identifier_name.clone(),
+                    from_current_scope: true,
+                    linkage: linkage,
+                };
+
+                self.map.insert(identifier, identifier_data);
+                self.identifier_count += 1;
+
+                identifier_name
+            }
+        }
+    }
+
+    fn new_scope(&mut self) -> Self {
+        let mut new_allocator = self.clone();
+        for v in new_allocator.map.values_mut() {
+            v.from_current_scope = false
+        }
+        new_allocator
     }
 }
 
-pub fn resolve_block(block: parser::Block, va: &mut VarAllocator) -> parser::Block {
+pub fn resolve_block(block: parser::Block, allocator: &mut IdentifierAllocator) -> parser::Block {
+    let mut new_scope_allocator = allocator.new_scope();
     parser::Block(
         block
             .0
             .into_iter()
-            .map(|i| resolve_block_item(i, va))
+            .map(|i| resolve_block_item(i, &mut new_scope_allocator))
             .collect(),
     )
 }
 
-pub fn resolve_block_item(item: parser::BlockItem, va: &mut VarAllocator) -> parser::BlockItem {
+pub fn resolve_block_item(
+    item: parser::BlockItem,
+    allocator: &mut IdentifierAllocator,
+) -> parser::BlockItem {
     match item {
-        parser::BlockItem::S(statement) => parser::BlockItem::S(resolve_statement(statement, va)),
+        parser::BlockItem::S(statement) => {
+            parser::BlockItem::S(resolve_statement(statement, allocator))
+        }
         parser::BlockItem::D(declaration) => {
-            parser::BlockItem::D(resolve_declaration(declaration, va))
+            parser::BlockItem::D(resolve_declaration(declaration, allocator))
         }
     }
 }
 
 pub fn resolve_declaration(
-    parser::Declaration { name, mut init }: parser::Declaration,
-    va: &mut VarAllocator,
+    declaration: parser::Declaration,
+    allocator: &mut IdentifierAllocator,
 ) -> parser::Declaration {
-    let new_var = va.new_var(name);
-    if let Some(exp) = init {
-        init = Some(resolve_exp(exp, va))
-    }
-    parser::Declaration {
-        name: new_var,
-        init,
+    match declaration {
+        parser::Declaration::FunDecl(fd) => {
+            parser::Declaration::FunDecl(resolve_local_function_declaration(fd, allocator))
+        }
+        parser::Declaration::VarDecl(vd) => {
+            parser::Declaration::VarDecl(resolve_variable_declaration(vd, allocator))
+        }
     }
 }
 
-pub fn resolve_exp(exp: parser::Expression, va: &mut VarAllocator) -> parser::Expression {
+pub fn resolve_local_function_declaration(
+    function_declaration: parser::FunctionDeclaration,
+    allocator: &mut IdentifierAllocator,
+) -> parser::FunctionDeclaration {
+    if function_declaration.body.is_some() {
+        panic!(
+            "Cannot redefine function in inner scope: {:?}",
+            function_declaration.name
+        );
+    }
+    resolve_function_declaration(function_declaration, allocator)
+}
+
+pub fn resolve_function_declaration(
+    parser::FunctionDeclaration { name, params, body }: parser::FunctionDeclaration,
+    allocator: &mut IdentifierAllocator,
+) -> parser::FunctionDeclaration {
+    let resolved_name = allocator.allocate_identifier(name.clone(), Linkage::ExternalLinkage);
+
+    let mut new_allocator = allocator.new_scope();
+
+    let resolved_params = params
+        .into_iter()
+        .map(|p| new_allocator.allocate_identifier(p, Linkage::NoLinkage))
+        .collect();
+
+    let resolved_body = body.map(|b| resolve_block(b, &mut new_allocator));
+
+    parser::FunctionDeclaration {
+        name: resolved_name,
+        params: resolved_params,
+        body: resolved_body,
+    }
+}
+
+pub fn resolve_variable_declaration(
+    parser::VariableDeclaration { name, init }: parser::VariableDeclaration,
+    allocator: &mut IdentifierAllocator,
+) -> parser::VariableDeclaration {
+    let new_var = allocator.allocate_identifier(name, Linkage::NoLinkage);
+    let new_init = init.map(|exp| resolve_exp(exp, allocator));
+    parser::VariableDeclaration {
+        name: new_var,
+        init: new_init,
+    }
+}
+
+pub fn resolve_exp(
+    exp: parser::Expression,
+    allocator: &mut IdentifierAllocator,
+) -> parser::Expression {
     match exp {
         parser::Expression::Assignment { lvalue, expression } => {
             if let parser::Expression::Var(_) = *lvalue {
                 return parser::Expression::Assignment {
-                    lvalue: Box::new(resolve_exp(*lvalue, va)),
-                    expression: Box::new(resolve_exp(*expression, va)),
+                    lvalue: Box::new(resolve_exp(*lvalue, allocator)),
+                    expression: Box::new(resolve_exp(*expression, allocator)),
                 };
             }
             panic!("Invalid lvalue: `{:?}`", lvalue)
         }
-        parser::Expression::Var(v) => match va.map.get(&v) {
-            Some(MapEntry {
-                new_name,
-                from_current_block: _,
-            }) => parser::Expression::Var(new_name.clone()),
-            None => panic!("Undeclared variable: `{}`", v),
-        },
+        parser::Expression::Var(v) => {
+            dbg!(&v, &allocator.map);
+            match allocator.map.get(&v) {
+                Some(IdentifierData { name: new_name, .. }) => {
+                    parser::Expression::Var(new_name.clone())
+                }
+                None => panic!("Undeclared variable: `{}`", v),
+            }
+        }
         parser::Expression::Unary { operator, operand } => parser::Expression::Unary {
             operator,
-            operand: Box::new(resolve_exp(*operand, va)),
+            operand: Box::new(resolve_exp(*operand, allocator)),
         },
         parser::Expression::Binary {
             operator,
@@ -125,47 +198,67 @@ pub fn resolve_exp(exp: parser::Expression, va: &mut VarAllocator) -> parser::Ex
             right_expression,
         } => parser::Expression::Binary {
             operator,
-            left_expression: Box::new(resolve_exp(*left_expression, va)),
-            right_expression: Box::new(resolve_exp(*right_expression, va)),
+            left_expression: Box::new(resolve_exp(*left_expression, allocator)),
+            right_expression: Box::new(resolve_exp(*right_expression, allocator)),
         },
         parser::Expression::Conditional {
             condition,
             then,
             otherwise,
         } => parser::Expression::Conditional {
-            condition: Box::new(resolve_exp(*condition, va)),
-            then: Box::new(resolve_exp(*then, va)),
-            otherwise: Box::new(resolve_exp(*otherwise, va)),
+            condition: Box::new(resolve_exp(*condition, allocator)),
+            then: Box::new(resolve_exp(*then, allocator)),
+            otherwise: Box::new(resolve_exp(*otherwise, allocator)),
         },
-        exp_without_subexp => exp_without_subexp,
+        parser::Expression::FunctionCall { identifier, args } => {
+            let new_name = match allocator.map.get(&identifier) {
+                Some(IdentifierData { name: new_name, .. }) => new_name.clone(),
+                None => panic!("Undeclared function: `{}`", identifier),
+            };
+
+            let new_args = args
+                .into_iter()
+                .map(|a| resolve_exp(a, allocator))
+                .collect();
+
+            parser::Expression::FunctionCall {
+                identifier: new_name,
+                args: new_args,
+            }
+        }
+        exp_without_subexp @ parser::Expression::Constant(_) => exp_without_subexp,
     }
 }
 
-pub fn resolve_statement(statement: parser::Statement, va: &mut VarAllocator) -> parser::Statement {
+pub fn resolve_statement(
+    statement: parser::Statement,
+    allocator: &mut IdentifierAllocator,
+) -> parser::Statement {
     match statement {
-        parser::Statement::Return(exp) => parser::Statement::Return(resolve_exp(exp, va)),
-        parser::Statement::Expression(exp) => parser::Statement::Expression(resolve_exp(exp, va)),
+        parser::Statement::Return(exp) => parser::Statement::Return(resolve_exp(exp, allocator)),
+        parser::Statement::Expression(exp) => {
+            parser::Statement::Expression(resolve_exp(exp, allocator))
+        }
         parser::Statement::If {
             condition,
             then,
             otherwise,
         } => parser::Statement::If {
-            condition: resolve_exp(condition, va),
-            then: Box::new(resolve_statement(*then, va)),
-            otherwise: otherwise.map(|statement| Box::new(resolve_statement(*statement, va))),
+            condition: resolve_exp(condition, allocator),
+            then: Box::new(resolve_statement(*then, allocator)),
+            otherwise: otherwise
+                .map(|statement| Box::new(resolve_statement(*statement, allocator))),
         },
         parser::Statement::Compound(block) => {
-            let mut var_allocator = va.clone();
-            var_allocator.map = copy_variable_map(var_allocator.map);
-            parser::Statement::Compound(resolve_block(block, &mut var_allocator))
+            parser::Statement::Compound(resolve_block(block, allocator))
         }
         parser::Statement::While { condition, body } => parser::Statement::While {
-            condition: resolve_exp(condition, va),
-            body: Box::new(resolve_statement(*body, va)),
+            condition: resolve_exp(condition, allocator),
+            body: Box::new(resolve_statement(*body, allocator)),
         },
         parser::Statement::DoWhile { condition, body } => parser::Statement::DoWhile {
-            condition: resolve_exp(condition, va),
-            body: Box::new(resolve_statement(*body, va)),
+            condition: resolve_exp(condition, allocator),
+            body: Box::new(resolve_statement(*body, allocator)),
         },
         parser::Statement::For {
             init,
@@ -173,13 +266,12 @@ pub fn resolve_statement(statement: parser::Statement, va: &mut VarAllocator) ->
             post,
             body,
         } => {
-            let mut new_va = va.clone();
-            new_va.map = copy_variable_map(new_va.map);
+            let mut new_scope_allocator = allocator.new_scope();
             parser::Statement::For {
-                init: resolve_for_init(init, &mut new_va),
-                condition: resolve_optional_exp(condition, &mut new_va),
-                post: resolve_optional_exp(post, &mut new_va),
-                body: Box::new(resolve_statement(*body, &mut new_va)),
+                init: resolve_for_init(init, &mut new_scope_allocator),
+                condition: resolve_optional_exp(condition, &mut new_scope_allocator),
+                post: resolve_optional_exp(post, &mut new_scope_allocator),
+                body: Box::new(resolve_statement(*body, &mut new_scope_allocator)),
             }
         }
         statement_without_substatement_or_subexpression @ (parser::Statement::Null
@@ -188,24 +280,16 @@ pub fn resolve_statement(statement: parser::Statement, va: &mut VarAllocator) ->
     }
 }
 
-fn resolve_for_init(init: ForInit, va: &mut VarAllocator) -> ForInit {
+fn resolve_for_init(init: parser::ForInit, allocator: &mut IdentifierAllocator) -> parser::ForInit {
     match init {
-        ForInit::D(dec) => ForInit::D(resolve_declaration(dec, va)),
-        ForInit::E(exp) => ForInit::E(resolve_optional_exp(exp, va)),
+        parser::ForInit::D(dec) => parser::ForInit::D(resolve_variable_declaration(dec, allocator)),
+        parser::ForInit::E(exp) => parser::ForInit::E(resolve_optional_exp(exp, allocator)),
     }
 }
 
 fn resolve_optional_exp(
     exp: Option<parser::Expression>,
-    va: &mut VarAllocator,
+    allocator: &mut IdentifierAllocator,
 ) -> Option<parser::Expression> {
-    exp.map(|e| resolve_exp(e, va))
-}
-
-pub fn copy_variable_map(map: HashMap<String, MapEntry>) -> HashMap<String, MapEntry> {
-    let mut new_map = map.clone();
-    for v in new_map.values_mut() {
-        v.from_current_block = false
-    }
-    new_map
+    exp.map(|e| resolve_exp(e, allocator))
 }

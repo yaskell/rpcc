@@ -21,30 +21,36 @@ impl LoopLabelGenerator {
 pub fn label_loops(program: parser::Program) -> LabeledProgram {
     let mut labeler = LoopLabelGenerator::new();
     LabeledProgram {
-        function: LabeledFunction::from(program.function, None, &mut labeler),
+        functions: program
+            .functions
+            .into_iter()
+            .map(|f| LabeledFunctionDeclaration::from(f, None, &mut labeler))
+            .collect(),
     }
 }
 
 #[derive(Debug)]
 pub struct LabeledProgram {
-    pub function: LabeledFunction,
+    pub functions: Vec<LabeledFunctionDeclaration>,
 }
 
 #[derive(Debug)]
-pub struct LabeledFunction {
+pub struct LabeledFunctionDeclaration {
     pub name: Identifier,
-    pub body: LabeledBlock,
+    pub params: Vec<Identifier>,
+    pub body: Option<LabeledBlock>,
 }
 
-impl LabeledFunction {
+impl LabeledFunctionDeclaration {
     fn from(
-        parser::Function { name, body }: parser::Function,
+        parser::FunctionDeclaration { name, params, body }: parser::FunctionDeclaration,
         current_label: Option<Identifier>,
         label_generator: &mut LoopLabelGenerator,
-    ) -> LabeledFunction {
-        LabeledFunction {
+    ) -> LabeledFunctionDeclaration {
+        LabeledFunctionDeclaration {
             name,
-            body: LabeledBlock::from(body, current_label, label_generator),
+            params,
+            body: body.map(|b| LabeledBlock::from(b, current_label, label_generator)),
         }
     }
 }

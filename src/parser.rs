@@ -107,7 +107,7 @@ impl VariableDeclaration {
         match &tokens[2] {
             Token::Equal => VariableDeclaration::parse_with_expression(tokens),
             Token::Semicolon => VariableDeclaration::parse_without_expression(tokens),
-            other => panic!("Malformed VariableDeclaration: {:?}", other),
+            other => panic!("Malformed variable declaration: {:?}", other),
         }
     }
 

@@ -2,15 +2,15 @@
 //mod code_emission;
 mod lexer;
 mod parser;
-//mod semantic_analysis;
+mod semantic_analysis;
 //mod tacky;
 
 use std::env;
 use std::fs;
 use std::process;
 
-//use crate::semantic_analysis::label_loops;
-//use crate::semantic_analysis::resolve_variables;
+use crate::semantic_analysis::label_loops;
+use crate::semantic_analysis::resolve_variables;
 
 fn main() {
     let arguments = Arguments::new(&env::args().collect::<Vec<String>>());
@@ -49,14 +49,14 @@ fn main() {
         process::exit(0);
     }
 
-    //     let ast = resolve_identifiers(ast);
-    //     let ast = label_loops(ast);
-    //     if let Some(Flag::Validate) = arguments.flag {
-    //         println!("Stopped generating tacky, did semantic analysis");
-    //         println!("Validated file contents:");
-    //         dbg!(&ast);
-    //         process::exit(0);
-    //     }
+    let ast = resolve_variables(ast);
+    let ast = label_loops(ast);
+    if let Some(Flag::Validate) = arguments.flag {
+        println!("Stopped generating tacky, did semantic analysis");
+        println!("Validated file contents:");
+        dbg!(&ast);
+        process::exit(0);
+    }
     //
     //     let tacky_ir = tacky::translate_program(ast);
     //     if let Some(Flag::Tacky) = arguments.flag {
