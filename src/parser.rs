@@ -1,8 +1,14 @@
+use std::vec;
+
 use crate::lexer::Token;
 
 pub fn parse(tokens: &mut Vec<Token>) -> Program {
-    let function = Function::parse(tokens);
-    let result = Program { function };
+    let mut functions: Vec<FunctionDeclaration> = vec![];
+    while !tokens.is_empty() {
+        functions.push(FunctionDeclaration::parse(tokens));
+    }
+
+    let result = Program { functions };
     if !tokens.is_empty() {
         panic!("Error: unexpected token '{:?} at end of program'", tokens)
     }
@@ -11,28 +17,51 @@ pub fn parse(tokens: &mut Vec<Token>) -> Program {
 
 #[derive(Debug)]
 pub struct Program {
-    pub function: Function,
+    pub functions: Vec<FunctionDeclaration>,
 }
 
 #[derive(Debug)]
-pub struct Function {
+pub struct FunctionDeclaration {
     pub name: Identifier,
-    pub body: Block,
+    pub params: Vec<Identifier>,
+    pub body: Option<Block>,
 }
 
-impl Function {
-    fn parse(tokens: &mut Vec<Token>) -> Function {
+impl FunctionDeclaration {
+    fn parse(tokens: &mut Vec<Token>) -> FunctionDeclaration {
         consume(Token::Int, tokens);
         let identifier = parse_identifier(tokens);
         consume(Token::OpenParan, tokens);
-        consume(Token::Void, tokens);
+        let params = Self::parse_parameters(tokens);
         consume(Token::CloseParan, tokens);
-        let block = Block::parse(tokens);
+        let block = if tokens.first() == Some(&Token::Semicolon) {
+            consume(Token::Semicolon, tokens);
+            None
+        } else {
+            Some(Block::parse(tokens))
+        };
 
-        Function {
+        FunctionDeclaration {
             name: identifier,
+            params,
             body: block,
         }
+    }
+
+    fn parse_parameters(tokens: &mut Vec<Token>) -> Vec<Identifier> {
+        if tokens.first() == Some(&Token::Void) {
+            consume(Token::Void, tokens);
+            return vec![String::from("void")];
+        }
+        let mut parameters: Vec<Identifier> = vec![];
+        consume(Token::Int, tokens);
+        parameters.push(parse_identifier(tokens));
+        while tokens.first() == Some(&Token::Comma) {
+            consume(Token::Comma, tokens);
+            consume(Token::Int, tokens);
+            parameters.push(parse_identifier(tokens));
+        }
+        parameters
     }
 }
 
@@ -68,25 +97,60 @@ impl BlockItem {
 }
 
 #[derive(Debug)]
-pub struct Declaration {
+pub struct VariableDeclaration {
     pub name: Identifier,
     pub init: Option<Expression>,
 }
 
-impl Declaration {
-    fn parse(tokens: &mut Vec<Token>) -> Declaration {
+impl VariableDeclaration {
+    fn parse(tokens: &mut Vec<Token>) -> VariableDeclaration {
+        match &tokens[2] {
+            Token::Equal => VariableDeclaration::parse_with_expression(tokens),
+            Token::Semicolon => VariableDeclaration::parse_without_expression(tokens),
+            other => panic!("Malformed VariableDeclaration: {:?}", other),
+        }
+    }
+
+    fn parse_with_expression(tokens: &mut Vec<Token>) -> VariableDeclaration {
         consume(Token::Int, tokens);
         let identifier = parse_identifier(tokens);
-        let expression = if tokens.first() == Some(&Token::Equal) {
-            consume(Token::Equal, tokens);
-            Some(Expression::parse(tokens, 0))
-        } else {
-            None
-        };
+        consume(Token::Equal, tokens);
+        let expression = Expression::parse(tokens, 0);
         consume(Token::Semicolon, tokens);
-        Declaration {
+        VariableDeclaration {
             name: identifier,
-            init: expression,
+            init: Some(expression),
+        }
+    }
+
+    fn parse_without_expression(tokens: &mut Vec<Token>) -> VariableDeclaration {
+        consume(Token::Int, tokens);
+        let identifier = parse_identifier(tokens);
+        consume(Token::Semicolon, tokens);
+        VariableDeclaration {
+            name: identifier,
+            init: None,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum Declaration {
+    FunDecl(FunctionDeclaration),
+    VarDecl(VariableDeclaration),
+}
+
+impl Declaration {
+    fn parse(tokens: &mut Vec<Token>) -> Declaration {
+        match &tokens[2] {
+            Token::Equal => {
+                Declaration::VarDecl(VariableDeclaration::parse_with_expression(tokens))
+            }
+            Token::Semicolon => {
+                Declaration::VarDecl(VariableDeclaration::parse_without_expression(tokens))
+            }
+            Token::OpenParan => Declaration::FunDecl(FunctionDeclaration::parse(tokens)),
+            other => panic!("Malformed declaration: {:?}", other),
         }
     }
 }
@@ -217,14 +281,14 @@ impl Statement {
 
 #[derive(Debug)]
 pub enum ForInit {
-    D(Declaration),
+    D(VariableDeclaration),
     E(Option<Expression>),
 }
 
 impl ForInit {
     fn parse(tokens: &mut Vec<Token>) -> ForInit {
         if tokens.first() == Some(&Token::Int) {
-            return ForInit::D(Declaration::parse(tokens));
+            return ForInit::D(VariableDeclaration::parse(tokens));
         }
 
         if let Some(e) = Expression::parse_optional(tokens, Token::Semicolon) {
@@ -258,6 +322,10 @@ pub enum Expression {
         condition: Box<Expression>,
         then: Box<Expression>,
         otherwise: Box<Expression>,
+    },
+    FunctionCall {
+        identifier: Identifier,
+        args: Vec<Expression>,
     },
 }
 
@@ -336,10 +404,34 @@ impl Expression {
                     consume(Token::CloseParan, tokens);
                     expr
                 }
-                Token::Identifier(i) => Expression::Var(i),
+                Token::Identifier(i) => {
+                    if tokens.first() == Some(&Token::OpenParan) {
+                        consume(Token::OpenParan, tokens);
+                        let mut args: Vec<Expression> = vec![];
+                        if tokens.first() != Some(&Token::CloseParan) {
+                            args.extend(Expression::parse_argument_list(tokens))
+                        }
+                        consume(Token::CloseParan, tokens);
+                        return Expression::FunctionCall {
+                            identifier: i,
+                            args,
+                        };
+                    }
+                    Expression::Var(i)
+                }
                 t => panic!("Malformed factor: {:?}", t),
             },
         }
+    }
+
+    fn parse_argument_list(tokens: &mut Vec<Token>) -> Vec<Expression> {
+        let mut args: Vec<Expression> = vec![];
+        args.push(Expression::parse(tokens, 0));
+        while tokens.first() == Some(&Token::Comma) {
+            consume(Token::Comma, tokens);
+            args.push(Expression::parse(tokens, 0));
+        }
+        args
     }
 }
 
