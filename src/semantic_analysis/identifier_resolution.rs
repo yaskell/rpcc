@@ -160,11 +160,12 @@ pub fn resolve_variable_declaration(
     parser::VariableDeclaration { name, init }: parser::VariableDeclaration,
     allocator: &mut IdentifierAllocator,
 ) -> parser::VariableDeclaration {
-    let new_var = allocator.allocate_identifier(name, Linkage::NoLinkage);
-    let new_init = init.map(|exp| resolve_exp(exp, allocator));
+    let resolved_var = allocator.allocate_identifier(name, Linkage::NoLinkage);
+    let resolved_init = init.map(|e| resolve_exp(e, allocator));
+
     parser::VariableDeclaration {
-        name: new_var,
-        init: new_init,
+        name: resolved_var,
+        init: resolved_init,
     }
 }
 
