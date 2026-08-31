@@ -183,15 +183,12 @@ pub fn resolve_exp(
             }
             panic!("Invalid lvalue: `{:?}`", lvalue)
         }
-        parser::Expression::Var(v) => {
-            dbg!(&v, &allocator.map);
-            match allocator.map.get(&v) {
-                Some(IdentifierData { name: new_name, .. }) => {
-                    parser::Expression::Var(new_name.clone())
-                }
-                None => panic!("Undeclared variable: `{}`", v),
+        parser::Expression::Var(v) => match allocator.map.get(&v) {
+            Some(IdentifierData { name: new_name, .. }) => {
+                parser::Expression::Var(new_name.clone())
             }
-        }
+            None => panic!("Undeclared variable: `{}`", v),
+        },
         parser::Expression::Unary { operator, operand } => parser::Expression::Unary {
             operator,
             operand: Box::new(resolve_exp(*operand, allocator)),
