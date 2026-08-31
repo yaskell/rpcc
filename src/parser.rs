@@ -51,7 +51,7 @@ impl FunctionDeclaration {
     fn parse_parameters(tokens: &mut Vec<Token>) -> Vec<Identifier> {
         if tokens.first() == Some(&Token::Void) {
             consume(Token::Void, tokens);
-            return vec![String::from("void")];
+            return vec![];
         }
         let mut parameters: Vec<Identifier> = vec![];
         consume(Token::Int, tokens);
