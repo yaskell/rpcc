@@ -124,6 +124,9 @@ impl TackyTranslator {
                     .0
                     .into_iter()
                     .flat_map(|item| self.translate_block_item(item))
+                    // Adding a return instruction to the end of every function make sure it returns
+                    // to the caller even if some execution paths are missing a return statement and
+                    // doesn't affect execution paths that already contain a return statement.
                     .chain(std::iter::once(Instruction::Return(Val::Constant(0))))
                     .collect()
             }),
