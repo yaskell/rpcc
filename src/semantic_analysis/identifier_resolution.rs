@@ -47,7 +47,11 @@ impl IdentifierAllocator {
 
     fn allocate_identifier(&mut self, identifier: String, linkage: Linkage) -> String {
         match self.map.get(&identifier) {
-            Some(v) if v.from_current_scope && v.linkage != Linkage::ExternalLinkage => {
+            Some(v)
+                if v.from_current_scope
+                    && (v.linkage != Linkage::ExternalLinkage
+                        || linkage != Linkage::ExternalLinkage) =>
+            {
                 panic!("Duplicate declaration: {identifier}")
             }
             _not_in_map => {
