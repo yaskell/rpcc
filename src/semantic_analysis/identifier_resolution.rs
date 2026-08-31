@@ -84,12 +84,11 @@ impl IdentifierAllocator {
 }
 
 pub fn resolve_block(block: parser::Block, allocator: &mut IdentifierAllocator) -> parser::Block {
-    let mut new_scope_allocator = allocator.new_scope();
     parser::Block(
         block
             .0
             .into_iter()
-            .map(|i| resolve_block_item(i, &mut new_scope_allocator))
+            .map(|i| resolve_block_item(i, allocator))
             .collect(),
     )
 }
@@ -254,7 +253,8 @@ pub fn resolve_statement(
                 .map(|statement| Box::new(resolve_statement(*statement, allocator))),
         },
         parser::Statement::Compound(block) => {
-            parser::Statement::Compound(resolve_block(block, allocator))
+            let mut new_scope_allocator = allocator.new_scope();
+            parser::Statement::Compound(resolve_block(block, &mut new_scope_allocator))
         }
         parser::Statement::While { condition, body } => parser::Statement::While {
             condition: resolve_exp(condition, allocator),
