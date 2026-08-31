@@ -3,7 +3,7 @@
 mod lexer;
 mod parser;
 mod semantic_analysis;
-//mod tacky;
+mod tacky;
 
 use std::env;
 use std::fs;
@@ -59,15 +59,15 @@ fn main() {
         dbg!(&ast);
         process::exit(0);
     }
-    //
-    //     let tacky_ir = tacky::translate_program(ast);
-    //     if let Some(Flag::Tacky) = arguments.flag {
-    //         println!("Stopped before generating assembly, ran tacky compilation pass");
-    //         println!("Parsed file contents:");
-    //         dbg!(&tacky_ir);
-    //         process::exit(0);
-    //     }
-    //
+
+    let tacky_ir = tacky::translate_program(ast);
+    if let Some(Flag::Tacky) = arguments.flag {
+        println!("Stopped before generating assembly, ran tacky compilation pass");
+        println!("Parsed file contents:");
+        dbg!(&tacky_ir);
+        process::exit(0);
+    }
+
     //     let asm_ast = asm::translate_program(tacky_ir);
     //     let (asm_ast, offset) = asm::replace_pseudo_registers(asm_ast);
     //     let asm_ast = asm::fix_program(asm_ast, offset);

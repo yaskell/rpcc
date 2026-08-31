@@ -1,16 +1,18 @@
-use crate::{parser, semantic_analysis::loop_labeling};
+use crate::parser;
+use crate::semantic_analysis::loop_labeling;
 
 type Identifier = String;
 type Int = i32;
 
 #[derive(Debug)]
 pub struct Program {
-    pub function: Function,
+    pub functions: Vec<Function>,
 }
 
 #[derive(Debug)]
 pub struct Function {
     pub identifier: Identifier,
+    pub params: Vec<Identifier>,
     pub body: Vec<Instruction>,
 }
 
@@ -44,6 +46,11 @@ pub enum Instruction {
         target: Identifier,
     },
     Label(Identifier),
+    FunCall {
+        fun_name: Identifier,
+        args: Vec<Val>,
+        dst: Val,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -93,20 +100,33 @@ impl TackyTranslator {
 
     fn translate_program(&mut self, program: loop_labeling::LabeledProgram) -> Program {
         Program {
-            function: self.translate_function(program.function),
+            functions: program
+                .functions
+                .into_iter()
+                .map(|f| self.translate_function(f))
+                .collect(),
         }
     }
 
-    fn translate_function(&mut self, function: loop_labeling::LabeledFunction) -> Function {
+    fn translate_function(
+        &mut self,
+        function: loop_labeling::LabeledFunctionDeclaration,
+    ) -> Function {
         Function {
             identifier: self.translate_identifier(function.name),
-            body: function
-                .body
-                .0
+            params: function
+                .params
                 .into_iter()
-                .flat_map(|block_item| self.translate_block_item(block_item))
-                .chain(std::iter::once(Instruction::Return(Val::Constant(0))))
+                .map(|p| self.translate_identifier(p))
                 .collect(),
+            body: function.body.map_or_else(Vec::new, |block| {
+                block
+                    .0
+                    .into_iter()
+                    .flat_map(|item| self.translate_block_item(item))
+                    .chain(std::iter::once(Instruction::Return(Val::Constant(0))))
+                    .collect()
+            }),
         }
     }
 
@@ -128,13 +148,27 @@ impl TackyTranslator {
 
     fn translate_declaration(
         &mut self,
-        parser::Declaration { name, init }: parser::Declaration,
+        declaration: loop_labeling::LabeledDeclaration,
+    ) -> Vec<Instruction> {
+        match declaration {
+            loop_labeling::LabeledDeclaration::LabeledFuncDecl(fd) => {
+                self.translate_local_function_declaration(fd)
+            }
+            loop_labeling::LabeledDeclaration::LabeledVarDecl(vd) => {
+                self.translate_variable_declaration(vd)
+            }
+        }
+    }
+
+    fn translate_variable_declaration(
+        &mut self,
+        vd: parser::VariableDeclaration,
     ) -> Vec<Instruction> {
         let mut instructions = Vec::new();
-        match init {
+        match vd.init {
             Some(e) => {
                 let var = parser::Expression::Assignment {
-                    lvalue: Box::new(parser::Expression::Var(name)),
+                    lvalue: Box::new(parser::Expression::Var(vd.name)),
                     expression: Box::new(e),
                 };
                 self.translate_expression(var, &mut instructions);
@@ -142,6 +176,16 @@ impl TackyTranslator {
             }
             None => instructions,
         }
+    }
+
+    fn translate_local_function_declaration(
+        &mut self,
+        fd: loop_labeling::LabeledFunctionDeclaration,
+    ) -> Vec<Instruction> {
+        if fd.body.is_some() {
+            panic!("Function declarations cannot occur in local scopes")
+        }
+        vec![]
     }
 
     fn translate_statement(
@@ -276,7 +320,7 @@ impl TackyTranslator {
         instructions: &mut Vec<Instruction>,
     ) -> Vec<Instruction> {
         match init {
-            parser::ForInit::D(declaration) => self.translate_declaration(declaration),
+            parser::ForInit::D(vd) => self.translate_variable_declaration(vd),
             parser::ForInit::E(expression) => {
                 if let Some(e) = expression {
                     self.translate_expression(e, instructions);
@@ -481,6 +525,23 @@ impl TackyTranslator {
                 });
 
                 instructions.push(Instruction::Label(format!("ternary_end{}", label_count)));
+                dst
+            }
+            parser::Expression::FunctionCall { identifier, args } => {
+                let dst = Val::Var(format!("tmp.{}", self.var_count).to_string());
+                self.var_count += 1;
+
+                let translated_args = args
+                    .into_iter()
+                    .map(|a| self.translate_expression(a, instructions))
+                    .collect();
+
+                instructions.push(Instruction::FunCall {
+                    fun_name: self.translate_identifier(identifier),
+                    args: translated_args,
+                    dst: dst.clone(),
+                });
+
                 dst
             }
         }

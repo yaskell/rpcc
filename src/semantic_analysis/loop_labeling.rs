@@ -35,6 +35,31 @@ pub struct LabeledProgram {
 }
 
 #[derive(Debug)]
+pub enum LabeledDeclaration {
+    LabeledFuncDecl(LabeledFunctionDeclaration),
+    LabeledVarDecl(parser::VariableDeclaration),
+}
+
+impl LabeledDeclaration {
+    fn from(
+        declaration: parser::Declaration,
+        current_label: Option<Identifier>,
+        label_generator: &mut LoopLabelGenerator,
+    ) -> Self {
+        match declaration {
+            parser::Declaration::FunDecl(parser::FunctionDeclaration { name, params, body }) => {
+                LabeledDeclaration::LabeledFuncDecl(LabeledFunctionDeclaration {
+                    name,
+                    params,
+                    body: body.map(|b| LabeledBlock::from(b, current_label, label_generator)),
+                })
+            }
+            parser::Declaration::VarDecl(vd) => LabeledDeclaration::LabeledVarDecl(vd),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct LabeledFunctionDeclaration {
     pub name: Identifier,
     pub params: Vec<Identifier>,
@@ -77,7 +102,7 @@ impl LabeledBlock {
 #[derive(Debug)]
 pub enum LabeledBlockItem {
     S(LabeledStatement),
-    D(parser::Declaration),
+    D(LabeledDeclaration),
 }
 
 impl LabeledBlockItem {
@@ -90,7 +115,9 @@ impl LabeledBlockItem {
             parser::BlockItem::S(statement) => {
                 LabeledBlockItem::S(LabeledStatement::from(statement, current_label, labeler))
             }
-            parser::BlockItem::D(d) => LabeledBlockItem::D(d),
+            parser::BlockItem::D(d) => {
+                LabeledBlockItem::D(LabeledDeclaration::from(d, current_label, labeler))
+            }
         }
     }
 }
