@@ -9,6 +9,7 @@ use std::env;
 use std::fs;
 use std::process;
 
+use crate::semantic_analysis::check_types;
 use crate::semantic_analysis::label_loops;
 use crate::semantic_analysis::resolve_identifiers;
 
@@ -50,6 +51,7 @@ fn main() {
     }
 
     let ast = resolve_identifiers(ast);
+    let _symbols = check_types(&ast);
     let ast = label_loops(ast);
     if let Some(Flag::Validate) = arguments.flag {
         println!("Stopped generating tacky, did semantic analysis");
