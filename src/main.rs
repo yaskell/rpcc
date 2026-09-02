@@ -177,7 +177,7 @@ Options:
     --tacky      Run tacky compiler pass, stop before assembly generation
     --codegen    Run up to assembly generation and print result
     -S           Emit assembly file (.s) but do not remove it
-    -S           Emit object file (.o)
+    -c           Emit object file (.o)
     --help       Show this help message
 "
     );
