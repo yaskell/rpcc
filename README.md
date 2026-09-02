@@ -37,6 +37,9 @@ preprocessor, assembler and linker.
 - Scopes: Create new scopes using blocks `{ ... }` in functions and as compound
   statements.
 - Loops: Supports `for`, `while` and `do` loops.
+- Functions: Supports function declarations, definitions and calls.
+- ABI: Adheres to Sytem V x86 ABI, and can use functions defined in shared
+  libraries
 - ...more features in progress
 
 ## Getting started
