@@ -200,7 +200,7 @@ fn translate_instruction(instruction: tacky::Instruction) -> Vec<asm::Instructio
             dst,
         } => {
             let (register_args, stack_args) = args.split_at(args.len().min(6));
-            let stack_padding = if stack_args.len() % 2 == 0 { 8 } else { 0 };
+            let stack_padding = if stack_args.len() % 2 == 0 { 0 } else { 8 };
 
             if stack_padding != 0 {
                 asm_instructions.push(asm::Instruction::AllocateStack(stack_padding))
