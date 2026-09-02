@@ -103,7 +103,7 @@ impl TackyTranslator {
             functions: program
                 .functions
                 .into_iter()
-                .map(|f| self.translate_function(f))
+                .filter_map(|f| self.translate_function(f))
                 .collect(),
         }
     }
@@ -111,26 +111,24 @@ impl TackyTranslator {
     fn translate_function(
         &mut self,
         function: loop_labeling::LabeledFunctionDeclaration,
-    ) -> Function {
-        Function {
+    ) -> Option<Function> {
+        function.body.map(|block| Function {
             identifier: self.translate_identifier(function.name),
             params: function
                 .params
                 .into_iter()
-                .map(|p| self.translate_identifier(p))
+                .map(|param| self.translate_identifier(param))
                 .collect(),
-            body: function.body.map_or_else(Vec::new, |block| {
-                block
-                    .0
-                    .into_iter()
-                    .flat_map(|item| self.translate_block_item(item))
-                    // Adding a return instruction to the end of every function make sure it returns
-                    // to the caller even if some execution paths are missing a return statement and
-                    // doesn't affect execution paths that already contain a return statement.
-                    .chain(std::iter::once(Instruction::Return(Val::Constant(0))))
-                    .collect()
-            }),
-        }
+            body: block
+                .0
+                .into_iter()
+                .flat_map(|block_item| self.translate_block_item(block_item))
+                // Adding a return instruction to the end of every function make sure it returns
+                // to the caller even if some execution paths are missing a return statement and
+                // doesn't affect execution paths that already contain a return statement.
+                .chain(std::iter::once(Instruction::Return(Val::Constant(0))))
+                .collect(),
+        })
     }
 
     fn translate_identifier(&self, identifier: Identifier) -> String {
