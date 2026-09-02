@@ -51,7 +51,7 @@ fn get_register_for_param(index: usize) -> asm::Operand {
         4 => asm::Operand::Register(asm::Register::R8),
         5 => asm::Operand::Register(asm::Register::R9),
         index => {
-            let offset = 8 + ((index as i32 - 6) * 8);
+            let offset = 16 + ((index as i32 - 6) * 8);
             asm::Operand::Stack(offset)
         }
     }
