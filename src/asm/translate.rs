@@ -211,8 +211,8 @@ fn translate_instruction(instruction: tacky::Instruction) -> Vec<asm::Instructio
                 .enumerate()
                 .for_each(|(i, parameter)| {
                     asm_instructions.push(asm::Instruction::Move {
-                        src: get_register_for_param(i),
-                        dst: asm::Operand::from(parameter.clone()),
+                        src: asm::Operand::from(parameter.clone()),
+                        dst: get_register_for_param(i),
                     })
                 });
 
