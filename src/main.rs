@@ -1,5 +1,5 @@
 mod asm;
-//mod code_emission;
+mod code_emission;
 mod lexer;
 mod parser;
 mod semantic_analysis;
@@ -78,36 +78,36 @@ fn main() {
         process::exit(0);
     }
 
-    //     let program = code_emission::emit(asm_ast);
-    //     if fs::write(format!("{filename_base}.s"), program).is_ok() {
-    //         if let Some(Flag::Object) = arguments.flag {
-    //             run_command(
-    //                 "gcc",
-    //                 &[
-    //                     "-c",
-    //                     format!("{filename_base}.s").as_str(),
-    //                     "-o",
-    //                     format!("{filename_base}.o").as_str(),
-    //                 ],
-    //             )
-    //             .expect("Linking failed");
-    //         } else {
-    //             run_command(
-    //                 "gcc",
-    //                 &[format!("{filename_base}.s").as_str(), "-o", filename_base],
-    //             )
-    //             .expect("Linking failed");
-    //         }
-    //
-    //         if let Some(Flag::Assembly) = arguments.flag {
-    //             process::exit(0);
-    //         }
-    //
-    //         let _ = fs::remove_file(format!("{filename_base}.s").as_str());
-    //
-    //         process::exit(0);
-    //     }
-    //
+    let program = code_emission::emit(asm_ast);
+    if fs::write(format!("{filename_base}.s"), program).is_ok() {
+        if let Some(Flag::Object) = arguments.flag {
+            run_command(
+                "gcc",
+                &[
+                    "-c",
+                    format!("{filename_base}.s").as_str(),
+                    "-o",
+                    format!("{filename_base}.o").as_str(),
+                ],
+            )
+            .expect("Linking failed");
+        } else {
+            run_command(
+                "gcc",
+                &[format!("{filename_base}.s").as_str(), "-o", filename_base],
+            )
+            .expect("Linking failed");
+        }
+
+        if let Some(Flag::Assembly) = arguments.flag {
+            process::exit(0);
+        }
+
+        let _ = fs::remove_file(format!("{filename_base}.s").as_str());
+
+        process::exit(0);
+    }
+
     process::exit(1);
 }
 
