@@ -1,21 +1,23 @@
 use crate::asm;
 
-pub fn fix_program(program: asm::Program, offset: i32) -> asm::Program {
+pub fn fix_program(program: asm::Program) -> asm::Program {
     asm::Program {
-        function: fix_function(program.function, offset),
+        functions: program
+            .functions
+            .into_iter()
+            .map(|f| fix_function(f))
+            .collect(),
     }
 }
 
-pub fn fix_function(function: asm::Function, offset: i32) -> asm::Function {
+pub fn fix_function(function: asm::Function) -> asm::Function {
+    let stack_size_rounded_to_16 = (function.stack_size + 15) / 16 * 16;
+
     asm::Function {
         name: function.name,
-        instructions: std::iter::once(asm::Instruction::AllocateStack(offset))
-            .chain(
-                function
-                    .instructions
-                    .into_iter()
-                    .flat_map(fix_instruction),
-            )
+        stack_size: function.stack_size,
+        instructions: std::iter::once(asm::Instruction::AllocateStack(stack_size_rounded_to_16))
+            .chain(function.instructions.into_iter().flat_map(fix_instruction))
             .collect(),
     }
 }

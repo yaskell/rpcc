@@ -1,12 +1,9 @@
 use crate::asm;
 use std::collections::HashMap;
 
-pub fn replace_pseudo_registers(program: asm::Program) -> (asm::Program, i32) {
+pub fn replace_pseudo_registers(program: asm::Program) -> asm::Program {
     let mut allocator = StackAllocator::new();
-    (
-        allocator.replace_program(program),
-        (allocator.next_offset + 4).abs(),
-    )
+    allocator.replace_program(program)
 }
 
 struct StackAllocator {
@@ -36,18 +33,27 @@ impl StackAllocator {
 
     fn replace_program(&mut self, program: asm::Program) -> asm::Program {
         asm::Program {
-            function: self.replace_function(program.function),
+            functions: program
+                .functions
+                .into_iter()
+                .map(|f| self.replace_function(f))
+                .collect(),
         }
     }
 
     fn replace_function(&mut self, function: asm::Function) -> asm::Function {
+        let instructions = function
+            .instructions
+            .into_iter()
+            .map(|instruction| self.replace_instruction(instruction))
+            .collect();
+
+        let current_offset = self.next_offset + 4;
+
         asm::Function {
             name: function.name,
-            instructions: function
-                .instructions
-                .into_iter()
-                .map(|instruction| self.replace_instruction(instruction))
-                .collect(),
+            instructions,
+            stack_size: current_offset.abs(),
         }
     }
 
@@ -77,7 +83,17 @@ impl StackAllocator {
                 cond_code,
                 operand: self.replace_operand(operand),
             },
-            instruction_without_operands => instruction_without_operands,
+            asm::Instruction::Push(operand) => {
+                asm::Instruction::Push(self.replace_operand(operand))
+            }
+            instruction_without_operands @ (asm::Instruction::AllocateStack(_)
+            | asm::Instruction::Cdq
+            | asm::Instruction::Jmp(_)
+            | asm::Instruction::JmpCC { .. }
+            | asm::Instruction::Label(_)
+            | asm::Instruction::DeallocateStack(_)
+            | asm::Instruction::Call(_)
+            | asm::Instruction::Ret) => instruction_without_operands,
         }
     }
 

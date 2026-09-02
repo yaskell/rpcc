@@ -1,4 +1,4 @@
-//mod asm;
+mod asm;
 //mod code_emission;
 mod lexer;
 mod parser;
@@ -68,16 +68,16 @@ fn main() {
         process::exit(0);
     }
 
-    //     let asm_ast = asm::translate_program(tacky_ir);
-    //     let (asm_ast, offset) = asm::replace_pseudo_registers(asm_ast);
-    //     let asm_ast = asm::fix_program(asm_ast, offset);
-    //     if let Some(Flag::Codegen) = arguments.flag {
-    //         println!("Stopped before code emission");
-    //         println!("Assembly Generation:");
-    //         dbg!(&asm_ast);
-    //         process::exit(0);
-    //     }
-    //
+    let asm_ast = asm::translate_program(tacky_ir);
+    let asm_ast = asm::replace_pseudo_registers(asm_ast);
+    let asm_ast = asm::fix_program(asm_ast);
+    if let Some(Flag::Codegen) = arguments.flag {
+        println!("Stopped before code emission");
+        println!("Assembly Generation:");
+        dbg!(&asm_ast);
+        process::exit(0);
+    }
+
     //     let program = code_emission::emit(asm_ast);
     //     if fs::write(format!("{filename_base}.s"), program).is_ok() {
     //         if let Some(Flag::Object) = arguments.flag {

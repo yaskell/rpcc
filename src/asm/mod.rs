@@ -12,13 +12,14 @@ pub type Int = i32;
 
 #[derive(Debug)]
 pub struct Program {
-    pub function: Function,
+    pub functions: Vec<Function>,
 }
 
 #[derive(Debug)]
 pub struct Function {
     pub name: String,
     pub instructions: Vec<Instruction>,
+    pub stack_size: i32,
 }
 
 #[derive(Debug)]
@@ -37,7 +38,6 @@ pub enum Instruction {
         right: Operand,
     },
     AllocateStack(Int),
-    Ret,
     Idiv(Operand),
     Cdq,
     Cmp {
@@ -54,6 +54,10 @@ pub enum Instruction {
         operand: Operand,
     },
     Label(Identifier),
+    DeallocateStack(Int),
+    Push(Operand),
+    Call(Identifier),
+    Ret,
 }
 
 #[derive(Debug)]
@@ -79,7 +83,7 @@ pub enum BinaryOp {
     Mult,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Operand {
     Imm(i32),
     Register(Register),
@@ -87,10 +91,15 @@ pub enum Operand {
     Stack(Int),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Register {
     AX,
+    CX,
     DX,
+    DI,
+    SI,
+    R8,
+    R9,
     R10,
     R11,
 }

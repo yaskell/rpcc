@@ -1,15 +1,20 @@
-use crate::{asm, tacky};
+use crate::{
+    asm::{self, Register},
+    tacky,
+};
 
 pub fn translate_program(program: tacky::Program) -> asm::Program {
-    asm::Program {
-        function: program.function.into(),
-    }
+    program.into()
 }
 
 impl From<tacky::Program> for asm::Program {
     fn from(program: tacky::Program) -> asm::Program {
         asm::Program {
-            function: program.function.into(),
+            functions: program
+                .functions
+                .into_iter()
+                .map(asm::Function::from)
+                .collect(),
         }
     }
 }
@@ -18,11 +23,36 @@ impl From<tacky::Function> for asm::Function {
     fn from(function: tacky::Function) -> asm::Function {
         asm::Function {
             name: function.identifier,
+            stack_size: 0,
             instructions: function
-                .body
+                .params
                 .into_iter()
-                .flat_map(translate_instruction)
+                .enumerate()
+                .map(|(i, parameter)| translate_param(i, parameter))
+                .chain(function.body.into_iter().flat_map(translate_instruction))
                 .collect(),
+        }
+    }
+}
+
+fn translate_param(index: usize, parameter: String) -> asm::Instruction {
+    asm::Instruction::Move {
+        src: get_register_for_param(index),
+        dst: asm::Operand::Pseudo(parameter),
+    }
+}
+
+fn get_register_for_param(index: usize) -> asm::Operand {
+    match index {
+        0 => asm::Operand::Register(asm::Register::DI),
+        1 => asm::Operand::Register(asm::Register::SI),
+        2 => asm::Operand::Register(asm::Register::DX),
+        3 => asm::Operand::Register(asm::Register::CX),
+        4 => asm::Operand::Register(asm::Register::R8),
+        5 => asm::Operand::Register(asm::Register::R9),
+        index => {
+            let offset = 8 + ((index as i32 - 6) * 8);
+            asm::Operand::Stack(offset)
         }
     }
 }
@@ -164,6 +194,58 @@ fn translate_instruction(instruction: tacky::Instruction) -> Vec<asm::Instructio
         tacky::Instruction::Label(identifier) => {
             asm_instructions.push(asm::Instruction::Label(identifier))
         }
+        tacky::Instruction::FunCall {
+            fun_name,
+            args,
+            dst,
+        } => {
+            let (register_args, stack_args) = args.split_at(args.len().min(6));
+            let stack_padding = if stack_args.len() % 2 == 0 { 8 } else { 0 };
+
+            if stack_padding != 0 {
+                asm_instructions.push(asm::Instruction::AllocateStack(stack_padding))
+            };
+
+            register_args
+                .into_iter()
+                .enumerate()
+                .for_each(|(i, parameter)| {
+                    asm_instructions.push(asm::Instruction::Move {
+                        src: get_register_for_param(i),
+                        dst: asm::Operand::from(parameter.clone()),
+                    })
+                });
+
+            stack_args.into_iter().rev().for_each(|stack_arg| {
+                let stack_arg = asm::Operand::from(stack_arg.clone());
+                match stack_arg {
+                    asm::Operand::Register(_) | asm::Operand::Imm(_) => {
+                        asm_instructions.push(asm::Instruction::Push(stack_arg))
+                    }
+                    _ => {
+                        asm_instructions.push(asm::Instruction::Move {
+                            src: stack_arg,
+                            dst: asm::Operand::Register(Register::AX),
+                        });
+                        asm_instructions
+                            .push(asm::Instruction::Push(asm::Operand::Register(Register::AX)));
+                    }
+                }
+            });
+
+            asm_instructions.push(asm::Instruction::Call(fun_name));
+
+            let bytes_to_remove = 8 * stack_args.len() as i32 + stack_padding;
+
+            if bytes_to_remove != 0 {
+                asm_instructions.push(asm::Instruction::DeallocateStack(bytes_to_remove));
+            }
+
+            asm_instructions.push(asm::Instruction::Move {
+                src: asm::Operand::Register(Register::AX),
+                dst: asm::Operand::from(dst),
+            });
+        }
     }
     asm_instructions
 }
@@ -186,7 +268,7 @@ impl From<tacky::BinaryOp> for asm::ConditionalCode {
             tacky::BinaryOp::LessOrEqual => asm::ConditionalCode::LE,
             tacky::BinaryOp::GreaterThan => asm::ConditionalCode::G,
             tacky::BinaryOp::GreaterOrEqual => asm::ConditionalCode::GE,
-            _ => unreachable!("Not a comparison operand"),
+            _ => panic!("Not a comparison operand"),
         }
     }
 }
@@ -197,7 +279,7 @@ impl From<tacky::UnaryOp> for asm::UnaryOp {
             tacky::UnaryOp::Complement => asm::UnaryOp::Not,
             tacky::UnaryOp::Negate => asm::UnaryOp::Neg,
             tacky::UnaryOp::Not => {
-                unreachable!("Tacky unary logical NOT is not converted into asm unary structure")
+                panic!("Tacky unary logical NOT is not converted into asm unary structure")
             }
         }
     }
