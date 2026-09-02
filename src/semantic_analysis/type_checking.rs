@@ -83,7 +83,6 @@ pub fn typecheck_block_item(block_item: &parser::BlockItem, symbols: &mut Symbol
 }
 
 pub fn typecheck_statement(statement: &parser::Statement, symbols: &mut Symbols) {
-    println!("{:?}", statement);
     match statement {
         parser::Statement::Compound(block) => typecheck_block(block, symbols),
         parser::Statement::Expression(exp) => typecheck_exp(exp, symbols),
