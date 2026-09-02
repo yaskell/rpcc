@@ -19,7 +19,7 @@ fn emit_function(fun: asm::Function) -> String {
   {}:
     pushq   %rbp
     movq    %rsp, %rbp
-    {}
+{}
 ",
         fun.name,
         fun.name,
@@ -32,45 +32,42 @@ fn emit_instructions(instructions: Vec<asm::Instruction>) -> String {
     for instruction in instructions {
         let s: String = match instruction {
             asm::Instruction::Move { src, dst } => format!(
-                "    movl    {}, {}",
+                "movl    {}, {}",
                 emit_operand(src, RegisterWidth::Bits32),
                 emit_operand(dst, RegisterWidth::Bits32)
             ),
             asm::Instruction::Ret => String::from(
-                "    movq    %rbp, %rsp
+                "movq    %rbp, %rsp
     popq    %rbp
     ret",
             ),
             asm::Instruction::Unary { op, operand } => format!(
-                "    {}    {}",
+                "{}    {}",
                 emit_unary_op(op),
                 emit_operand(operand, RegisterWidth::Bits32)
             ),
             asm::Instruction::AllocateStack(i) => format!("subq    ${i}, %rsp"),
             asm::Instruction::Binary { op, left, right } => format!(
-                "    {}    {}, {}",
+                "{}    {}, {}",
                 emit_binary_op(op),
                 emit_operand(left, RegisterWidth::Bits32),
                 emit_operand(right, RegisterWidth::Bits32)
             ),
             asm::Instruction::Idiv(operand) => {
-                format!(
-                    "    idivl    {}",
-                    emit_operand(operand, RegisterWidth::Bits32)
-                )
+                format!("idivl    {}", emit_operand(operand, RegisterWidth::Bits32))
             }
-            asm::Instruction::Cdq => "    cdq".to_string(),
+            asm::Instruction::Cdq => "cdq".to_string(),
             asm::Instruction::Cmp { left, right } => format!(
-                "    cmpl    {}, {}",
+                "cmpl    {}, {}",
                 emit_operand(left, RegisterWidth::Bits32),
                 emit_operand(right, RegisterWidth::Bits32)
             ),
-            asm::Instruction::Jmp(l) => format!("    jmp    .L{}", l),
+            asm::Instruction::Jmp(l) => format!("jmp    .L{}", l),
             asm::Instruction::JmpCC { cond_code, target } => {
-                format!("    j{}    .L{}", emit_conditional_code(cond_code), target)
+                format!("j{}    .L{}", emit_conditional_code(cond_code), target)
             }
             asm::Instruction::SetCC { cond_code, operand } => format!(
-                "    set{}    {}",
+                "set{}    {}",
                 emit_conditional_code(cond_code),
                 emit_operand(operand, RegisterWidth::Bits8)
             ),
@@ -81,7 +78,7 @@ fn emit_instructions(instructions: Vec<asm::Instruction>) -> String {
             }
             asm::Instruction::Call(label) => format!("call {label}@PLT"),
         };
-        b.push_str(&format!("{}\n", &s));
+        b.push_str(&format!("    {}\n", &s));
     }
     b
 }
