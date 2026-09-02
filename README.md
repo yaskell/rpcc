@@ -1,12 +1,11 @@
 ## About
 
-Crust is a toy compiler for a subset of C written in Rust, based on [Writing a C
+Crust is a compiler for a subset of C written in Rust, based on [Writing a C
 Compiler](https://norasandler.com/book/) by Nora Sandler.
 
-For the time being, relies on GCC as compiler driver for invoking the
-preprocessor, assembler and linker.
+For the time being, relies on GCC for preprocessing, assembling and linking.
 
-**Features**:
+**Features**
 
 - Bare minimum: Can compile a main function that returns an integer into x64
   assembly.
@@ -42,6 +41,15 @@ preprocessor, assembler and linker.
   libraries
 - ...more features in progress
 
+## Getting started
+
+Devshell available as `flake.nix`
+
+Run `cargo build --release` to build project, executable will be found in
+`target/release`. Run `crust --help` for information on usage.
+
+Use `./run.sh` to run the sample hello world program.
+
 ## Architecture
 
 ```mermaid
@@ -75,11 +83,31 @@ flowchart TD
     G --> H("program.s")
 ```
 
-## Getting started
+### Context
 
-Dependencies are managed using `flake.nix`.
+Crust is a compiler, which is just one part of the complete process of
+transforming source code into an executable program. Crust translates
+preprocessed C source code into assembly code, while GCC handles the surrounding
+stages, such as preprocessing, assembling and linking. The diagram below
+illustrates the complete process and shows where Crust fits in. Crust also
+serves as the compiler driver, coordinating and invoking each stage of the
+compilation process in the correct order.
 
-Run `cargo build --release` to build project, executable will be found in
-`target/release`. Run `crust --help` for information on usage.
+```mermaid
+flowchart TD
+    start(( )) -->|"C source code (text)"| P
+    P["Preprocessor"] -->|"Preprocessed C source code (text)"| C
+    C["Compiler"] -->|"Assembler code (text)"| A
+    object1(( )) -->|"Object File (binary)"| L
+    A["Assembler"] -->|"Object File (binary)"| L
+    object2(( )) -->|"Object File (binary)"| L
+    L["Linker"] -->|"Executable (binary)"| terminal(( ))
 
-Use `./run.sh` to run the sample program and automatically print its exit code.
+style start fill:none,stroke:none,color:none
+style terminal fill:none,stroke:none,color:none
+style object1 fill:none,stroke:none,color:none
+style object2 fill:none,stroke:none,color:none
+style C stroke:red
+```
+
+
