@@ -42,6 +42,39 @@ preprocessor, assembler and linker.
   libraries
 - ...more features in progress
 
+## Architecture
+
+```mermaid
+flowchart TD
+    A["program.c"] --> B["Lexer"]
+    B -->|"Token list"| C["Parser"]
+    C -->|"AST"| SA
+
+    subgraph SA["Semantic analysis"]
+        direction TB
+        D1["Identifier resolution"]
+        D2["Type checking"]
+        D3["Loop labeling"]
+
+        D1 --> D2 --> D3
+    end
+
+    SA -->|"Transformed AST"| E["TACKY generation"]
+    E -->|"TACKY IR"| AG
+
+    subgraph AG["Assembly Generation"]
+        direction TB
+        F1["TACKY translation"]
+        F2["Replacing pseudoregisters"]
+        F3["Instruction fix-up"]
+
+        F1 --> F2 --> F3
+    end
+
+    AG -->|"Assembly"| G["Code emission"]
+    G --> H("program.s")
+```
+
 ## Getting started
 
 Dependencies are managed using `flake.nix`.
