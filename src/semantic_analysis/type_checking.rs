@@ -196,6 +196,6 @@ pub fn typecheck_exp(exp: &parser::Expression, symbols: &mut Symbols) {
             typecheck_exp(then, symbols);
             typecheck_exp(otherwise, symbols);
         }
-        _expression_without_identifier @ (parser::Expression::Constant(_)) => {}
+        _expression_without_identifier @ parser::Expression::Constant(_) => {}
     }
 }
