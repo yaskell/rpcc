@@ -4,10 +4,14 @@
 
 ## About
 
-Crust is a compiler for a subset of C written in Rust, based on [Writing a C
-Compiler](https://norasandler.com/book/) by Nora Sandler.
+Crust is a compiler for a subset of C, it is based on [Writing a C
+Compiler](https://norasandler.com/book/) by Nora Sandler. For the time being,
+crust relies on GCC for preprocessing, assembling, and linking in order
+to produce a working executable.
 
-For the time being, relies on GCC for preprocessing, assembling and linking.
+This compiler targets the x86-64 System V ABI and produces executables that run
+natively on Unix-like operating systems such as Linux and BSD, but not macOS.
+Apple Silicon systems can emulate x64, Windows requires WSL.
 
 **Features**
 
