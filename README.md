@@ -1,3 +1,7 @@
+> [!WARNING]
+> This project was built for learning and understanding.
+> Expect experimentation and inefficiencies.
+
 ## About
 
 Crust is a compiler for a subset of C written in Rust, based on [Writing a C
