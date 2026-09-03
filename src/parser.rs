@@ -1,5 +1,3 @@
-use std::vec;
-
 use crate::lexer::Token;
 
 pub fn parse(tokens: &mut Vec<Token>) -> Program {

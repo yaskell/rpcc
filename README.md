@@ -117,9 +117,18 @@ style terminal fill:none,stroke:none,color:none
 ```
 
 
+## Dependencies
 
+One of the project goals is to be written completely from scratch. For now it
+relies on the [regex](https://docs.rs/regex/latest/regex/) crate and a handful
+of Rust standard-library modules to be build:
+- `std::collections::HashMap`
+- `std::env`
+- `std::fs`
+- `std::process`
+- `std::sync::LazyLock`
 
-
+To run the project `gcc` is required.
 
 ## Testing
 
