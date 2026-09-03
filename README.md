@@ -13,41 +13,23 @@ This compiler targets the x86-64 System V ABI and produces executables that run
 natively on Unix-like operating systems such as Linux and BSD, but not macOS.
 Apple Silicon systems can emulate x64, Windows requires WSL.
 
-**Features**
+### Features
 
-- Bare minimum: Can compile a main function that returns an integer into x64
-  assembly.
-- Arithmetic operators:
-    - addition (`+`)
-    - subtraction (`-`)
-    - multiplication (`*`)
-    - division (`/`)
-    - remainder (`%`)
-    - negation (`-`)
-    - bitwise complement (`~`)
-- Logical operators:
-    - AND (`&&`)
-    - OR (`||`)
-    - NOT (`!`)
-- Comparison operators:
-     - equal to (`==`)
-     - not equal to (`!=`)
-     - less than (`<`)
-     - greater than (`>`)
-     - less than or equal to (`<=`)
-     - greater than or equal to (`>=`)
-- Variables: Supports variable declarations with (`int x = 5;`) or without
-  initializer (`int x;`), validates variables exist before use and are limited
-  to one declaration per scope.
-- Conditionals: Supports `if ... else ...` statements and ternary expressions
-  `... ? ... : ...`.
-- Scopes: Create new scopes using blocks `{ ... }` in functions and as compound
-  statements.
-- Loops: Supports `for`, `while` and `do` loops.
-- Functions: Supports function declarations, definitions and calls.
-- ABI: Adheres to Sytem V x86 ABI, and can use functions defined in shared
-  libraries
-- ...more features in progress
+This compiler is still being developed, the current features are listed in the
+table below.
+
+| Feature              | Description                                                                                                                                                                |
+| -------              | -----------                                                                                                                                                                |
+| Variables            | Supports variable declarations with (`int x = 5;`) and without initializer (`int x;`)                                                                                      |
+| Functions            | Supports function declaration, definition and calling. Variadic function can be run, but can not yet be compiled. Supports recursion.                                      |
+| Scopes               | Supports scopes using blocks `{ ... }` in functions and as compound statements. Validates identifiers are declared before use and are limited to one definition per scope. |
+| Types                | Supports `int` type.                                                                                                                                                       |
+| Arithmetic operators | Supports addition (`+`), subtraction (`-`), multiplication (`*`), division (`/`), remainder (`%`), negation (`-`) and bitwise complement (`~`) operators .                 |
+| Logical operators    | Supports AND (`&&`), OR (`\|\|`) and NOT (`!`) logical operators, these operators are short-circuit evaluated.                                                      |
+| Comparison operators | Supports equal to (`==`), not equal to (`!=`), less than (`<`), greater than (`>`), less than or equal to (`<=`) and greater than or equal to (`>=`) operators.            |
+| Loops                | Supports `for`, `while` and `do` loops.                                                                                                                                    |
+| Conditionals         | Supports `if ... else ...` statements and ternary expressions `... ? ... : ...`.                                                                                           |
+| Shared libraries     | Standard library functions can be called, `#include` directives are not supported yet, library functions need to be explicitly declared before use.                        |
 
 ## Getting started
 
