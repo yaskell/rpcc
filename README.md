@@ -121,3 +121,8 @@ style terminal fill:none,stroke:none,color:none
 
 
 
+## Testing
+
+This project uses the [Writing a C Compiler Test Suite
+](https://github.com/nlsandler/writing-a-c-compiler-tests.git) supplied by
+Nora Sandler.
