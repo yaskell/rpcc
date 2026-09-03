@@ -1,5 +1,5 @@
 {
-  description = "Crust: Toy compiler for a subset of C written in rust";
+  description = "Devshell for Crust";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
@@ -16,7 +16,7 @@
       buildInputs = with pkgs; [
         gcc
         gdb
-        python315
+        python315 # Used for running test suite
         cargo
         rustc
         rustfmt
