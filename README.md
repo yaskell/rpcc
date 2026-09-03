@@ -51,12 +51,15 @@ Apple Silicon systems can emulate x64, Windows requires WSL.
 
 ## Getting started
 
-Devshell available as `flake.nix`
+A development shell is provided through `flake.nix`. Standard Rust tools are
+required.
 
-Run `cargo build --release` to build project, executable will be found in
-`target/release`. Run `crust --help` for information on usage.
+To build the project use `cargo build --release`, the executable will be found
+in `target/release`. Run it with the `--help` flag for information
+on usage.
 
-Use `./run.sh` to run the sample hello world program.
+To run a sample program, use the `./run.sh` script or compile and run the sample
+program `program.c` yourself.
 
 ## Architecture
 
