@@ -1,4 +1,4 @@
 /target
-/return
-/return.s
-/return.o
+/program
+/program.o
+/program.s
