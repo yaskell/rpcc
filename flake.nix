@@ -27,6 +27,8 @@
       shellHook = ''
         export RUST_SRC_PATH=${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}
         export PATH=$PATH:$(pwd)/target/release
+        rustc --version
+        echo
       '';
     };
   };
