@@ -267,16 +267,15 @@ fn find_longest_match<'a>(file: &'a str) -> Option<Capture<'a>> {
     let mut longest_capture: Option<Capture<'a>> = None;
 
     for token_definition in OTHER_TOKENS_DEFINITIONS.iter() {
-        if let Some(capture) = token_definition.regex.find(file) {
-            if longest_capture
+        if let Some(capture) = token_definition.regex.find(file)
+            && longest_capture
                 .as_ref()
                 .is_none_or(|current_longest| capture.len() > current_longest.value.len())
-            {
-                longest_capture = Some(Capture {
-                    value: capture,
-                    token_type: &token_definition.token_type,
-                });
-            }
+        {
+            longest_capture = Some(Capture {
+                value: capture,
+                token_type: &token_definition.token_type,
+            });
         }
     }
     longest_capture

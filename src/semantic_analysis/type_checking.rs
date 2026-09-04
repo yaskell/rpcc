@@ -64,7 +64,7 @@ pub fn typecheck_function_declaration(fd: &parser::FunctionDeclaration, symbols:
                 },
             );
         });
-        fd.body.as_ref().map(|b| typecheck_block(&b, symbols));
+        fd.body.as_ref().map(|b| typecheck_block(b, symbols));
     };
 }
 
@@ -94,9 +94,7 @@ pub fn typecheck_statement(statement: &parser::Statement, symbols: &mut Symbols)
         } => {
             typecheck_exp(condition, symbols);
             typecheck_statement(then, symbols);
-            otherwise
-                .as_ref()
-                .map(|s| typecheck_statement(&*s, symbols));
+            otherwise.as_ref().map(|s| typecheck_statement(s, symbols));
         }
         parser::Statement::While { condition, body } => {
             typecheck_exp(condition, symbols);
@@ -162,7 +160,7 @@ pub fn typecheck_exp(exp: &parser::Expression, symbols: &mut Symbols) {
                             identifier
                         );
                     }
-                    args.into_iter().for_each(|a| typecheck_exp(a, symbols));
+                    args.iter().for_each(|a| typecheck_exp(a, symbols));
                 }
             }
         }

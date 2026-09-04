@@ -6,7 +6,7 @@ pub fn emit(program: asm::Program) -> String {
     program
         .functions
         .into_iter()
-        .for_each(|f| buffer.push_str(&emit_function(f).as_str()));
+        .for_each(|f| buffer.push_str(emit_function(f).as_str()));
 
     buffer.push_str("    .section .note.GNU-stack,\"\",@progbits");
 

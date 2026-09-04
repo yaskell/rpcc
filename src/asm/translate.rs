@@ -207,7 +207,7 @@ fn translate_instruction(instruction: tacky::Instruction) -> Vec<asm::Instructio
             };
 
             register_args
-                .into_iter()
+                .iter()
                 .enumerate()
                 .for_each(|(i, parameter)| {
                     asm_instructions.push(asm::Instruction::Move {
@@ -216,7 +216,7 @@ fn translate_instruction(instruction: tacky::Instruction) -> Vec<asm::Instructio
                     })
                 });
 
-            stack_args.into_iter().rev().for_each(|stack_arg| {
+            stack_args.iter().rev().for_each(|stack_arg| {
                 let stack_arg = asm::Operand::from(stack_arg.clone());
                 match stack_arg {
                     asm::Operand::Register(_) | asm::Operand::Imm(_) => {

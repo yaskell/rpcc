@@ -63,7 +63,7 @@ impl IdentifierAllocator {
                 let identifier_data = IdentifierData {
                     name: identifier_name.clone(),
                     from_current_scope: true,
-                    linkage: linkage,
+                    linkage,
                 };
 
                 self.map.insert(identifier, identifier_data);

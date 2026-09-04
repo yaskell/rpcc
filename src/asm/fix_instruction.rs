@@ -5,7 +5,7 @@ pub fn fix_program(program: asm::Program) -> asm::Program {
         functions: program
             .functions
             .into_iter()
-            .map(|f| fix_function(f))
+            .map(fix_function)
             .collect(),
     }
 }

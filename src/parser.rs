@@ -331,6 +331,7 @@ impl Expression {
     fn parse(tokens: &mut Vec<Token>, min_prec: u8) -> Expression {
         let mut left = Expression::parse_factor(tokens);
 
+        #[allow(clippy::while_let_loop)]
         loop {
             let Some(next) = tokens.first() else { break };
             let Ok(binary_op) = BinaryOp::parse(next) else {
