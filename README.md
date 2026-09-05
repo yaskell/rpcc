@@ -1,5 +1,5 @@
 > [!WARNING]
-> This project was built for learning and understanding.
+> This project was built for learning and understanding purposes.
 > Expect experimentation and inefficiencies.
 
 ## About
