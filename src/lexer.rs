@@ -264,21 +264,15 @@ pub fn lex(mut file: &str) -> Vec<Token> {
 }
 
 fn find_longest_match<'a>(file: &'a str) -> Option<Capture<'a>> {
-    let mut longest_capture: Option<Capture<'a>> = None;
-
-    for token_definition in OTHER_TOKENS_DEFINITIONS.iter() {
-        if let Some(capture) = token_definition.regex.find(file)
-            && longest_capture
-                .as_ref()
-                .is_none_or(|current_longest| capture.len() > current_longest.value.len())
-        {
-            longest_capture = Some(Capture {
+    OTHER_TOKENS_DEFINITIONS
+        .iter()
+        .filter_map(|token_definition| {
+            token_definition.regex.find(file).map(|capture| Capture {
                 value: capture,
                 token_type: &token_definition.token_type,
-            });
-        }
-    }
-    longest_capture
+            })
+        })
+        .max_by_key(|capture| capture.value.len())
 }
 
 fn check_if_comment(file: &str) -> Option<Match<'_>> {
