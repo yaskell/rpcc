@@ -49,6 +49,14 @@ int main(void) {
         prod = prod - 1;
     } while (prod > 0);
 
+    i = 0;
+    while (1) {
+        i = i + 1;
+        if (i == 2) continue;
+        if (i == 5) break;
+        prod = prod + i;
+    }
+
     if (ok) {
         sum = sum + factorial(4); // 46
     } else {

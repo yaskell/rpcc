@@ -168,7 +168,7 @@ impl Arguments {
 
 fn usage_message() -> ! {
     eprintln!(
-        "Usage: crust [OPTIONS] <file.c>
+        "Usage: rpcc [OPTIONS] <file.c>
 
 Options:
     --lex        Run lexer only and print tokens
