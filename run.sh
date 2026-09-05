@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
-cargo run -- -S ./program.c && (
+RUST_BACKTRACE=1 cargo run -- ./program.c && (
     ./program
+    echo $?
 )

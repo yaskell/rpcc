@@ -25,11 +25,82 @@ table below.
 | Scopes               | Supports scopes using blocks `{ ... }` in functions and as compound statements. Validates identifiers are declared before use and are limited to one definition per scope. |
 | Types                | Supports `int` type.                                                                                                                                                       |
 | Arithmetic operators | Supports addition (`+`), subtraction (`-`), multiplication (`*`), division (`/`), remainder (`%`), negation (`-`) and bitwise complement (`~`) operators .                 |
-| Logical operators    | Supports AND (`&&`), OR (`\|\|`) and NOT (`!`) logical operators, these operators are short-circuit evaluated.                                                      |
+| Logical operators    | Supports AND (`&&`), OR (`\|\|`) and NOT (`!`) logical operators, these operators are short-circuit evaluated.                                                             |
 | Comparison operators | Supports equal to (`==`), not equal to (`!=`), less than (`<`), greater than (`>`), less than or equal to (`<=`) and greater than or equal to (`>=`) operators.            |
 | Loops                | Supports `for`, `while` and `do` loops.                                                                                                                                    |
 | Conditionals         | Supports `if ... else ...` statements and ternary expressions `... ? ... : ...`.                                                                                           |
 | Shared libraries     | Standard library functions can be called, `#include` directives are not supported yet, library functions need to be explicitly declared before use.                        |
+
+That means it can compile programs like:
+
+```c
+int putchar(int c);
+
+int factorial(int n) {
+    if (n <= 1) {
+        return 1;
+    } else {
+        return n * factorial(n - 1);
+    }
+}
+
+int add(int a, int b) {
+    return a + b;
+}
+
+int main(void) {
+    int x = 5;
+    int y;
+
+    y = 3;
+
+    int sum = add(x, y); // 8
+    int diff = x - y;
+    int prod = x * y;
+    int quot = x / y;
+    int rem = x % y;
+    int neg = -x;
+    int bit = ~x;
+
+    int bigger = (x > y) ? x : y;
+    int ok = (x == 5 && y == 3) || !(x != 5);
+
+    {
+        int x = 10;
+        int inner = x + 1;
+        sum = sum + inner; // 19
+    }
+
+    int i = 0;
+    while (i < 3) {
+        sum = sum + i;
+        i = i + 1;
+    } // sum = 22
+
+    for (i = 0; i < 3; i = i + 1) {
+        diff = diff + i;
+    }
+
+    do {
+        prod = prod - 1;
+    } while (prod > 0);
+
+    if (ok) {
+        sum = sum + factorial(4); // 46
+    } else {
+        sum = sum - 1;
+    }
+
+    putchar(104); // h
+    putchar(101); // e
+    putchar(108); // l
+    putchar(108); // l
+    putchar(111); // o
+    putchar(10);  // newline
+
+    return sum; // 46
+}
+```
 
 ## Getting started
 
