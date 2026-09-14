@@ -1,9 +1,9 @@
 mod asm;
 mod code_emission;
+mod ir;
 mod lexer;
 mod parser;
 mod semantic_analysis;
-mod tacky;
 
 use std::env;
 use std::fs;
@@ -36,7 +36,6 @@ fn main() {
 
     let mut tokens = lexer::lex(&file_content);
     if let Some(Flag::Lex) = arguments.flag {
-        println!("Stopped before parsing");
         println!("Lexed file contents:");
         dbg!(&tokens);
         process::exit(0);
@@ -44,7 +43,6 @@ fn main() {
 
     let ast = parser::parse(&mut tokens);
     if let Some(Flag::Parse) = arguments.flag {
-        println!("Stopped before generating assembly");
         println!("Parsed file contents:",);
         dbg!(&ast);
         process::exit(0);
@@ -54,25 +52,22 @@ fn main() {
     let _symbols = check_types(&ast);
     let ast = label_loops(ast);
     if let Some(Flag::Validate) = arguments.flag {
-        println!("Stopped generating tacky, did semantic analysis");
         println!("Validated file contents:");
         dbg!(&ast);
         process::exit(0);
     }
 
-    let tacky_ir = tacky::translate_program(ast);
-    if let Some(Flag::Tacky) = arguments.flag {
-        println!("Stopped before generating assembly, ran tacky compilation pass");
-        println!("Parsed file contents:");
-        dbg!(&tacky_ir);
+    let ir = ir::translate_program(ast);
+    if let Some(Flag::IR) = arguments.flag {
+        println!("IR Generation:");
+        dbg!(&ir);
         process::exit(0);
     }
 
-    let asm_ast = asm::translate_program(tacky_ir);
+    let asm_ast = asm::translate_program(ir);
     let asm_ast = asm::replace_pseudo_registers(asm_ast);
     let asm_ast = asm::fix_program(asm_ast);
     if let Some(Flag::Codegen) = arguments.flag {
-        println!("Stopped before code emission");
         println!("Assembly Generation:");
         dbg!(&asm_ast);
         process::exit(0);
@@ -117,7 +112,7 @@ enum Flag {
     Validate,
     Codegen,
     Assembly,
-    Tacky,
+    IR,
     Object,
 }
 
@@ -153,7 +148,7 @@ impl Arguments {
                 "--validate" => Some(Flag::Validate),
                 "--codegen" => Some(Flag::Codegen),
                 "-S" => Some(Flag::Assembly),
-                "--tacky" => Some(Flag::Tacky),
+                "--tacky" => Some(Flag::IR),
                 "-c" => Some(Flag::Object),
                 _ => {
                     eprintln!("ERROR: flag `{}` not recognized", args[1].as_str());
@@ -174,7 +169,7 @@ Options:
     --lex        Run lexer only and print tokens
     --parse      Run lexer + parser and print AST
     --validate   Run lexer + parser + semantic analysis and print AST
-    --tacky      Run tacky compiler pass, stop before assembly generation
+    --tacky      Run ir compiler pass, stop before assembly generation
     --codegen    Run up to assembly generation and print result
     -S           Emit assembly file (.s) but do not remove it
     -c           Emit object file (.o)

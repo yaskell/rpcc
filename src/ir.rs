@@ -82,17 +82,17 @@ pub enum BinaryOp {
 }
 
 pub fn translate_program(program: loop_labeling::LabeledProgram) -> Program {
-    TackyTranslator::new().translate_program(program)
+    IRTranslator::new().translate_program(program)
 }
 
-pub struct TackyTranslator {
+pub struct IRTranslator {
     var_count: i32,
     label_count: i32,
 }
 
-impl TackyTranslator {
-    fn new() -> TackyTranslator {
-        TackyTranslator {
+impl IRTranslator {
+    fn new() -> IRTranslator {
+        IRTranslator {
             var_count: 0,
             label_count: 0,
         }
@@ -473,7 +473,7 @@ impl TackyTranslator {
                             unreachable!("Should've matched super branch")
                         }
                         parser::BinaryOp::Ternary => {
-                            unreachable!("Ternary Expression not represented as BinaryOp in Tacky")
+                            unreachable!("Ternary Expression not represented as BinaryOp in IR")
                         }
                     };
 

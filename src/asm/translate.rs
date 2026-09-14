@@ -1,14 +1,14 @@
 use crate::{
     asm::{self, Register},
-    tacky,
+    ir,
 };
 
-pub fn translate_program(program: tacky::Program) -> asm::Program {
+pub fn translate_program(program: ir::Program) -> asm::Program {
     program.into()
 }
 
-impl From<tacky::Program> for asm::Program {
-    fn from(program: tacky::Program) -> asm::Program {
+impl From<ir::Program> for asm::Program {
+    fn from(program: ir::Program) -> asm::Program {
         asm::Program {
             functions: program
                 .functions
@@ -19,8 +19,8 @@ impl From<tacky::Program> for asm::Program {
     }
 }
 
-impl From<tacky::Function> for asm::Function {
-    fn from(function: tacky::Function) -> asm::Function {
+impl From<ir::Function> for asm::Function {
+    fn from(function: ir::Function) -> asm::Function {
         asm::Function {
             name: function.identifier,
             stack_size: 0,
@@ -57,20 +57,20 @@ fn get_register_for_param(index: usize) -> asm::Operand {
     }
 }
 
-fn translate_instruction(instruction: tacky::Instruction) -> Vec<asm::Instruction> {
+fn translate_instruction(instruction: ir::Instruction) -> Vec<asm::Instruction> {
     let mut asm_instructions = Vec::new();
     match instruction {
-        tacky::Instruction::Return(val) => {
+        ir::Instruction::Return(val) => {
             asm_instructions.push(asm::Instruction::Move {
                 src: val.into(),
                 dst: asm::Operand::Register(asm::Register::AX),
             });
             asm_instructions.push(asm::Instruction::Ret)
         }
-        tacky::Instruction::Unary { op, src, dst } => {
+        ir::Instruction::Unary { op, src, dst } => {
             let dst: asm::Operand = dst.into();
             match op {
-                tacky::UnaryOp::Complement | tacky::UnaryOp::Negate => {
+                ir::UnaryOp::Complement | ir::UnaryOp::Negate => {
                     asm_instructions.push(asm::Instruction::Move {
                         src: src.into(),
                         dst: dst.clone(),
@@ -80,7 +80,7 @@ fn translate_instruction(instruction: tacky::Instruction) -> Vec<asm::Instructio
                         operand: dst.clone(),
                     })
                 }
-                tacky::UnaryOp::Not => {
+                ir::UnaryOp::Not => {
                     asm_instructions.push(asm::Instruction::Cmp {
                         left: asm::Operand::Imm(0),
                         right: src.into(),
@@ -96,13 +96,13 @@ fn translate_instruction(instruction: tacky::Instruction) -> Vec<asm::Instructio
                 }
             }
         }
-        tacky::Instruction::Binary {
+        ir::Instruction::Binary {
             op,
             left,
             right,
             dst,
         } => match &op {
-            tacky::BinaryOp::Divide => {
+            ir::BinaryOp::Divide => {
                 asm_instructions.push(asm::Instruction::Move {
                     src: left.into(),
                     dst: asm::Operand::Register(asm::Register::AX),
@@ -114,7 +114,7 @@ fn translate_instruction(instruction: tacky::Instruction) -> Vec<asm::Instructio
                     dst: dst.into(),
                 });
             }
-            tacky::BinaryOp::Remainder => {
+            ir::BinaryOp::Remainder => {
                 asm_instructions.push(asm::Instruction::Move {
                     src: left.into(),
                     dst: asm::Operand::Register(asm::Register::AX),
@@ -126,12 +126,12 @@ fn translate_instruction(instruction: tacky::Instruction) -> Vec<asm::Instructio
                     dst: dst.into(),
                 });
             }
-            tacky::BinaryOp::Equal
-            | tacky::BinaryOp::NotEqual
-            | tacky::BinaryOp::LessThan
-            | tacky::BinaryOp::LessOrEqual
-            | tacky::BinaryOp::GreaterThan
-            | tacky::BinaryOp::GreaterOrEqual => {
+            ir::BinaryOp::Equal
+            | ir::BinaryOp::NotEqual
+            | ir::BinaryOp::LessThan
+            | ir::BinaryOp::LessOrEqual
+            | ir::BinaryOp::GreaterThan
+            | ir::BinaryOp::GreaterOrEqual => {
                 asm_instructions.push(asm::Instruction::Cmp {
                     left: right.into(),
                     right: left.into(),
@@ -147,9 +147,9 @@ fn translate_instruction(instruction: tacky::Instruction) -> Vec<asm::Instructio
             }
             _ => {
                 let op = match &op {
-                    tacky::BinaryOp::Add => asm::BinaryOp::Add,
-                    tacky::BinaryOp::Subtract => asm::BinaryOp::Sub,
-                    tacky::BinaryOp::Multiply => asm::BinaryOp::Mult,
+                    ir::BinaryOp::Add => asm::BinaryOp::Add,
+                    ir::BinaryOp::Subtract => asm::BinaryOp::Sub,
+                    ir::BinaryOp::Multiply => asm::BinaryOp::Mult,
                     _ => {
                         unreachable!("Should've matched super branch")
                     }
@@ -166,12 +166,12 @@ fn translate_instruction(instruction: tacky::Instruction) -> Vec<asm::Instructio
                 });
             }
         },
-        tacky::Instruction::Copy { src, dst } => asm_instructions.push(asm::Instruction::Move {
+        ir::Instruction::Copy { src, dst } => asm_instructions.push(asm::Instruction::Move {
             src: src.into(),
             dst: dst.into(),
         }),
-        tacky::Instruction::Jump { target } => asm_instructions.push(asm::Instruction::Jmp(target)),
-        tacky::Instruction::JumpIfZero { condition, target } => {
+        ir::Instruction::Jump { target } => asm_instructions.push(asm::Instruction::Jmp(target)),
+        ir::Instruction::JumpIfZero { condition, target } => {
             asm_instructions.push(asm::Instruction::Cmp {
                 left: asm::Operand::Imm(0),
                 right: condition.into(),
@@ -181,7 +181,7 @@ fn translate_instruction(instruction: tacky::Instruction) -> Vec<asm::Instructio
                 target,
             });
         }
-        tacky::Instruction::JumpIfNotZero { condition, target } => {
+        ir::Instruction::JumpIfNotZero { condition, target } => {
             asm_instructions.push(asm::Instruction::Cmp {
                 left: asm::Operand::Imm(0),
                 right: condition.into(),
@@ -191,10 +191,10 @@ fn translate_instruction(instruction: tacky::Instruction) -> Vec<asm::Instructio
                 target,
             });
         }
-        tacky::Instruction::Label(identifier) => {
+        ir::Instruction::Label(identifier) => {
             asm_instructions.push(asm::Instruction::Label(identifier))
         }
-        tacky::Instruction::FunCall {
+        ir::Instruction::FunCall {
             fun_name,
             args,
             dst,
@@ -206,15 +206,12 @@ fn translate_instruction(instruction: tacky::Instruction) -> Vec<asm::Instructio
                 asm_instructions.push(asm::Instruction::AllocateStack(stack_padding))
             };
 
-            register_args
-                .iter()
-                .enumerate()
-                .for_each(|(i, parameter)| {
-                    asm_instructions.push(asm::Instruction::Move {
-                        src: asm::Operand::from(parameter.clone()),
-                        dst: get_register_for_param(i),
-                    })
-                });
+            register_args.iter().enumerate().for_each(|(i, parameter)| {
+                asm_instructions.push(asm::Instruction::Move {
+                    src: asm::Operand::from(parameter.clone()),
+                    dst: get_register_for_param(i),
+                })
+            });
 
             stack_args.iter().rev().for_each(|stack_arg| {
                 let stack_arg = asm::Operand::from(stack_arg.clone());
@@ -250,36 +247,36 @@ fn translate_instruction(instruction: tacky::Instruction) -> Vec<asm::Instructio
     asm_instructions
 }
 
-impl From<tacky::Val> for asm::Operand {
-    fn from(val: tacky::Val) -> asm::Operand {
+impl From<ir::Val> for asm::Operand {
+    fn from(val: ir::Val) -> asm::Operand {
         match val {
-            tacky::Val::Constant(c) => asm::Operand::Imm(c),
-            tacky::Val::Var(v) => asm::Operand::Pseudo(v),
+            ir::Val::Constant(c) => asm::Operand::Imm(c),
+            ir::Val::Var(v) => asm::Operand::Pseudo(v),
         }
     }
 }
 
-impl From<tacky::BinaryOp> for asm::ConditionalCode {
-    fn from(code: tacky::BinaryOp) -> asm::ConditionalCode {
+impl From<ir::BinaryOp> for asm::ConditionalCode {
+    fn from(code: ir::BinaryOp) -> asm::ConditionalCode {
         match code {
-            tacky::BinaryOp::Equal => asm::ConditionalCode::E,
-            tacky::BinaryOp::NotEqual => asm::ConditionalCode::NE,
-            tacky::BinaryOp::LessThan => asm::ConditionalCode::L,
-            tacky::BinaryOp::LessOrEqual => asm::ConditionalCode::LE,
-            tacky::BinaryOp::GreaterThan => asm::ConditionalCode::G,
-            tacky::BinaryOp::GreaterOrEqual => asm::ConditionalCode::GE,
+            ir::BinaryOp::Equal => asm::ConditionalCode::E,
+            ir::BinaryOp::NotEqual => asm::ConditionalCode::NE,
+            ir::BinaryOp::LessThan => asm::ConditionalCode::L,
+            ir::BinaryOp::LessOrEqual => asm::ConditionalCode::LE,
+            ir::BinaryOp::GreaterThan => asm::ConditionalCode::G,
+            ir::BinaryOp::GreaterOrEqual => asm::ConditionalCode::GE,
             _ => panic!("Not a comparison operand"),
         }
     }
 }
 
-impl From<tacky::UnaryOp> for asm::UnaryOp {
-    fn from(unary_op: tacky::UnaryOp) -> asm::UnaryOp {
+impl From<ir::UnaryOp> for asm::UnaryOp {
+    fn from(unary_op: ir::UnaryOp) -> asm::UnaryOp {
         match unary_op {
-            tacky::UnaryOp::Complement => asm::UnaryOp::Not,
-            tacky::UnaryOp::Negate => asm::UnaryOp::Neg,
-            tacky::UnaryOp::Not => {
-                panic!("Tacky unary logical NOT is not converted into asm unary structure")
+            ir::UnaryOp::Complement => asm::UnaryOp::Not,
+            ir::UnaryOp::Negate => asm::UnaryOp::Neg,
+            ir::UnaryOp::Not => {
+                panic!("IR unary logical NOT is not converted into asm unary structure")
             }
         }
     }
