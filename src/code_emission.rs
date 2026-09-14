@@ -62,7 +62,7 @@ fn emit_instructions(instructions: Vec<asm::Instruction>) -> String {
                 emit_operand(left, RegisterWidth::Bits32),
                 emit_operand(right, RegisterWidth::Bits32)
             ),
-            asm::Instruction::Jmp(l) => format!("jmp    .L{}", l),
+            asm::Instruction::Jmp(l) => format!("jmp    .L{l}"),
             asm::Instruction::JmpCC { cond_code, target } => {
                 format!("j{}    .L{}", emit_conditional_code(cond_code), target)
             }
@@ -78,7 +78,7 @@ fn emit_instructions(instructions: Vec<asm::Instruction>) -> String {
             }
             asm::Instruction::Call(label) => format!("call {label}@PLT"),
         };
-        b.push_str(&format!("    {}\n", &s));
+        b.push_str(&format!("    {s}\n"));
     }
     b
 }

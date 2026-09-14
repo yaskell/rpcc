@@ -65,7 +65,7 @@ pub fn typecheck_function_declaration(fd: &parser::FunctionDeclaration, symbols:
             );
         });
         fd.body.as_ref().map(|b| typecheck_block(b, symbols));
-    };
+    }
 }
 
 pub fn typecheck_block(block: &parser::Block, symbols: &mut Symbols) {
@@ -152,7 +152,7 @@ pub fn typecheck_exp(exp: &parser::Expression, symbols: &mut Symbols) {
     match exp {
         parser::Expression::FunctionCall { identifier, args } => {
             match symbols.get(identifier).unwrap().kind {
-                Type::Int => panic!("Variable '{:?}' used as function name", identifier),
+                Type::Int => panic!("Variable '{identifier:?}' used as function name"),
                 Type::FunType { param_count } => {
                     if param_count != args.len() as u32 {
                         panic!(

@@ -20,14 +20,11 @@ impl StackAllocator {
     }
 
     fn offset_for(&mut self, name: &String) -> i32 {
-        match self.identifier_offsets.get(name) {
-            Some(offset) => *offset,
-            None => {
-                let offset = self.next_offset;
-                self.identifier_offsets.insert(name.clone(), offset);
-                self.next_offset -= 4;
-                offset
-            }
+        if let Some(offset) = self.identifier_offsets.get(name) { *offset } else {
+            let offset = self.next_offset;
+            self.identifier_offsets.insert(name.clone(), offset);
+            self.next_offset -= 4;
+            offset
         }
     }
 

@@ -91,8 +91,8 @@ pub struct IRTranslator {
 }
 
 impl IRTranslator {
-    fn new() -> IRTranslator {
-        IRTranslator {
+    const fn new() -> Self {
+        Self {
             var_count: 0,
             label_count: 0,
         }
@@ -131,7 +131,7 @@ impl IRTranslator {
         })
     }
 
-    fn translate_identifier(&self, identifier: Identifier) -> String {
+    const fn translate_identifier(&self, identifier: Identifier) -> String {
         identifier
     }
 
@@ -197,7 +197,7 @@ impl IRTranslator {
         match statement {
             loop_labeling::LabeledStatement::Return(expression) => {
                 let value = self.translate_expression(expression, &mut instructions);
-                instructions.push(Instruction::Return(value))
+                instructions.push(Instruction::Return(value));
             }
             loop_labeling::LabeledStatement::Expression(expression) => {
                 self.translate_expression(expression, &mut instructions);
@@ -212,29 +212,26 @@ impl IRTranslator {
                 self.label_count += 1;
 
                 let c = self.translate_expression(condition, &mut instructions);
-                match otherwise {
-                    Some(otherwise) => {
-                        instructions.push(Instruction::JumpIfZero {
-                            condition: c,
-                            target: format!("if_else{}", label_count),
-                        });
-                        instructions.extend(self.translate_statement(*then));
+                if let Some(otherwise) = otherwise {
+                    instructions.push(Instruction::JumpIfZero {
+                        condition: c,
+                        target: format!("if_else{label_count}"),
+                    });
+                    instructions.extend(self.translate_statement(*then));
 
-                        instructions.push(Instruction::Jump {
-                            target: format!("if_end{}", label_count),
-                        });
-                        instructions.push(Instruction::Label(format!("if_else{}", label_count)));
-                        instructions.extend(self.translate_statement(*otherwise));
-                    }
-                    None => {
-                        instructions.push(Instruction::JumpIfZero {
-                            condition: c,
-                            target: format!("if_end{}", label_count),
-                        });
-                        instructions.extend(self.translate_statement(*then));
-                    }
+                    instructions.push(Instruction::Jump {
+                        target: format!("if_end{label_count}"),
+                    });
+                    instructions.push(Instruction::Label(format!("if_else{label_count}")));
+                    instructions.extend(self.translate_statement(*otherwise));
+                } else {
+                    instructions.push(Instruction::JumpIfZero {
+                        condition: c,
+                        target: format!("if_end{label_count}"),
+                    });
+                    instructions.extend(self.translate_statement(*then));
                 }
-                instructions.push(Instruction::Label(format!("if_end{}", label_count)));
+                instructions.push(Instruction::Label(format!("if_end{label_count}")));
             }
             loop_labeling::LabeledStatement::Compound(block) => instructions.extend(
                 block
@@ -244,12 +241,12 @@ impl IRTranslator {
             ),
             loop_labeling::LabeledStatement::Break(label) => {
                 instructions.push(Instruction::Jump {
-                    target: format!("break_{}", label),
+                    target: format!("break_{label}"),
                 });
             }
             loop_labeling::LabeledStatement::Continue(label) => {
                 instructions.push(Instruction::Jump {
-                    target: format!("continue_{}", label),
+                    target: format!("continue_{label}"),
                 });
             }
             loop_labeling::LabeledStatement::While {
@@ -257,32 +254,32 @@ impl IRTranslator {
                 body,
                 label,
             } => {
-                instructions.push(Instruction::Label(format!("continue_{}", label)));
+                instructions.push(Instruction::Label(format!("continue_{label}")));
                 let c = self.translate_expression(condition, &mut instructions);
                 instructions.push(Instruction::JumpIfZero {
                     condition: c,
-                    target: format!("break_{}", label),
+                    target: format!("break_{label}"),
                 });
                 instructions.extend(self.translate_statement(*body));
                 instructions.push(Instruction::Jump {
-                    target: format!("continue_{}", label),
+                    target: format!("continue_{label}"),
                 });
-                instructions.push(Instruction::Label(format!("break_{}", label)));
+                instructions.push(Instruction::Label(format!("break_{label}")));
             }
             loop_labeling::LabeledStatement::DoWhile {
                 condition,
                 body,
                 label,
             } => {
-                instructions.push(Instruction::Label(format!("start_{}", label)));
+                instructions.push(Instruction::Label(format!("start_{label}")));
                 instructions.extend(self.translate_statement(*body));
-                instructions.push(Instruction::Label(format!("continue_{}", label)));
+                instructions.push(Instruction::Label(format!("continue_{label}")));
                 let c = self.translate_expression(condition, &mut instructions);
                 instructions.push(Instruction::JumpIfNotZero {
                     condition: c,
-                    target: format!("start_{}", label),
+                    target: format!("start_{label}"),
                 });
-                instructions.push(Instruction::Label(format!("break_{}", label)));
+                instructions.push(Instruction::Label(format!("break_{label}")));
             }
             loop_labeling::LabeledStatement::For {
                 init,
@@ -293,25 +290,25 @@ impl IRTranslator {
             } => {
                 let init = self.translate_for_init(init, &mut instructions);
                 instructions.extend(init);
-                instructions.push(Instruction::Label(format!("start_{}", label)));
+                instructions.push(Instruction::Label(format!("start_{label}")));
                 if let Some(condition) = condition {
                     let c = self.translate_expression(condition, &mut instructions);
                     instructions.push(Instruction::JumpIfZero {
                         condition: c,
-                        target: format!("break_{}", label),
+                        target: format!("break_{label}"),
                     });
-                };
+                }
                 instructions.extend(self.translate_statement(*body));
-                instructions.push(Instruction::Label(format!("continue_{}", label)));
+                instructions.push(Instruction::Label(format!("continue_{label}")));
                 if let Some(exp) = post {
                     self.translate_expression(exp, &mut instructions);
                 }
                 instructions.push(Instruction::Jump {
-                    target: format!("start_{}", label),
+                    target: format!("start_{label}"),
                 });
-                instructions.push(Instruction::Label(format!("break_{}", label)));
+                instructions.push(Instruction::Label(format!("break_{label}")));
             }
-        };
+        }
         instructions
     }
 
@@ -349,7 +346,7 @@ impl IRTranslator {
             }
             parser::Expression::Constant(int) => Val::Constant(int),
             parser::Expression::Unary { operator, operand } => {
-                let dst = Val::Var(format!("tmp.{}", self.var_count).to_string());
+                let dst = Val::Var(format!("tmp.{}", self.var_count));
                 let src = {
                     self.var_count += 1;
                     self.translate_expression(*operand, instructions)
@@ -375,7 +372,7 @@ impl IRTranslator {
                 right_expression,
             } => match operator {
                 parser::BinaryOp::And => {
-                    let dst = Val::Var(format!("tmp.{}", self.var_count).to_string());
+                    let dst = Val::Var(format!("tmp.{}", self.var_count));
                     self.var_count += 1;
 
                     let label_count = self.label_count;
@@ -384,13 +381,13 @@ impl IRTranslator {
                     let left = self.translate_expression(*left_expression, instructions);
                     instructions.push(Instruction::JumpIfZero {
                         condition: left,
-                        target: format!("and_false{}", label_count),
+                        target: format!("and_false{label_count}"),
                     });
 
                     let right = self.translate_expression(*right_expression, instructions);
                     instructions.push(Instruction::JumpIfZero {
                         condition: right,
-                        target: format!("and_false{}", label_count),
+                        target: format!("and_false{label_count}"),
                     });
 
                     instructions.push(Instruction::Copy {
@@ -399,21 +396,21 @@ impl IRTranslator {
                     });
 
                     instructions.push(Instruction::Jump {
-                        target: format!("and_end{}", label_count),
+                        target: format!("and_end{label_count}"),
                     });
 
-                    instructions.push(Instruction::Label(format!("and_false{}", label_count)));
+                    instructions.push(Instruction::Label(format!("and_false{label_count}")));
 
                     instructions.push(Instruction::Copy {
                         src: Val::Constant(0),
                         dst: dst.clone(),
                     });
 
-                    instructions.push(Instruction::Label(format!("and_end{}", label_count)));
+                    instructions.push(Instruction::Label(format!("and_end{label_count}")));
                     dst
                 }
                 parser::BinaryOp::Or => {
-                    let dst = Val::Var(format!("tmp.{}", self.var_count).to_string());
+                    let dst = Val::Var(format!("tmp.{}", self.var_count));
                     self.var_count += 1;
 
                     let label_count = self.label_count;
@@ -422,13 +419,13 @@ impl IRTranslator {
                     let left = self.translate_expression(*left_expression, instructions);
                     instructions.push(Instruction::JumpIfNotZero {
                         condition: left,
-                        target: format!("or_false{}", label_count),
+                        target: format!("or_false{label_count}"),
                     });
 
                     let right = self.translate_expression(*right_expression, instructions);
                     instructions.push(Instruction::JumpIfNotZero {
                         condition: right,
-                        target: format!("or_false{}", label_count),
+                        target: format!("or_false{label_count}"),
                     });
 
                     instructions.push(Instruction::Copy {
@@ -437,21 +434,21 @@ impl IRTranslator {
                     });
 
                     instructions.push(Instruction::Jump {
-                        target: format!("or_end{}", label_count),
+                        target: format!("or_end{label_count}"),
                     });
 
-                    instructions.push(Instruction::Label(format!("or_false{}", label_count)));
+                    instructions.push(Instruction::Label(format!("or_false{label_count}")));
 
                     instructions.push(Instruction::Copy {
                         src: Val::Constant(1),
                         dst: dst.clone(),
                     });
 
-                    instructions.push(Instruction::Label(format!("or_end{}", label_count)));
+                    instructions.push(Instruction::Label(format!("or_end{label_count}")));
                     dst
                 }
                 other_operator => {
-                    let dst = Val::Var(format!("tmp.{}", self.var_count).to_string());
+                    let dst = Val::Var(format!("tmp.{}", self.var_count));
                     self.var_count += 1;
                     let left = self.translate_expression(*left_expression, instructions);
                     let right = self.translate_expression(*right_expression, instructions);
@@ -491,7 +488,7 @@ impl IRTranslator {
                 then,
                 otherwise,
             } => {
-                let dst = Val::Var(format!("tmp.{}", self.var_count).to_string());
+                let dst = Val::Var(format!("tmp.{}", self.var_count));
                 self.var_count += 1;
 
                 let label_count = self.label_count;
@@ -501,7 +498,7 @@ impl IRTranslator {
 
                 instructions.push(Instruction::JumpIfZero {
                     condition,
-                    target: format!("ternary_otherwise{}", label_count),
+                    target: format!("ternary_otherwise{label_count}"),
                 });
 
                 let e1 = self.translate_expression(*then, instructions);
@@ -511,12 +508,11 @@ impl IRTranslator {
                 });
 
                 instructions.push(Instruction::Jump {
-                    target: format!("ternary_end{}", label_count),
+                    target: format!("ternary_end{label_count}"),
                 });
 
                 instructions.push(Instruction::Label(format!(
-                    "ternary_otherwise{}",
-                    label_count
+                    "ternary_otherwise{label_count}"
                 )));
 
                 let e2 = self.translate_expression(*otherwise, instructions);
@@ -525,11 +521,11 @@ impl IRTranslator {
                     dst: dst.clone(),
                 });
 
-                instructions.push(Instruction::Label(format!("ternary_end{}", label_count)));
+                instructions.push(Instruction::Label(format!("ternary_end{label_count}")));
                 dst
             }
             parser::Expression::FunctionCall { identifier, args } => {
-                let dst = Val::Var(format!("tmp.{}", self.var_count).to_string());
+                let dst = Val::Var(format!("tmp.{}", self.var_count));
                 self.var_count += 1;
 
                 let translated_args = args

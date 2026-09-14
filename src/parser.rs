@@ -26,7 +26,7 @@ pub struct FunctionDeclaration {
 }
 
 impl FunctionDeclaration {
-    fn parse(tokens: &mut Vec<Token>) -> FunctionDeclaration {
+    fn parse(tokens: &mut Vec<Token>) -> Self {
         consume(Token::Int, tokens);
         let identifier = parse_identifier(tokens);
         consume(Token::OpenParan, tokens);
@@ -39,7 +39,7 @@ impl FunctionDeclaration {
             Some(Block::parse(tokens))
         };
 
-        FunctionDeclaration {
+        Self {
             name: identifier,
             params,
             body: block,
@@ -67,15 +67,15 @@ impl FunctionDeclaration {
 pub struct Block(pub Vec<BlockItem>);
 
 impl Block {
-    fn parse(tokens: &mut Vec<Token>) -> Block {
+    fn parse(tokens: &mut Vec<Token>) -> Self {
         consume(Token::OpenBrace, tokens);
         let mut block_items = Vec::new();
         while tokens.first() != Some(&Token::CloseBrace) {
-            block_items.push(BlockItem::parse(tokens))
+            block_items.push(BlockItem::parse(tokens));
         }
         consume(Token::CloseBrace, tokens);
 
-        Block(block_items)
+        Self(block_items)
     }
 }
 
@@ -86,10 +86,10 @@ pub enum BlockItem {
 }
 
 impl BlockItem {
-    fn parse(tokens: &mut Vec<Token>) -> BlockItem {
+    fn parse(tokens: &mut Vec<Token>) -> Self {
         match tokens.first().unwrap() {
-            Token::Int => BlockItem::D(Declaration::parse(tokens)),
-            _ => BlockItem::S(Statement::parse(tokens)),
+            Token::Int => Self::D(Declaration::parse(tokens)),
+            _ => Self::S(Statement::parse(tokens)),
         }
     }
 }
@@ -101,31 +101,31 @@ pub struct VariableDeclaration {
 }
 
 impl VariableDeclaration {
-    fn parse(tokens: &mut Vec<Token>) -> VariableDeclaration {
+    fn parse(tokens: &mut Vec<Token>) -> Self {
         match &tokens[2] {
-            Token::Equal => VariableDeclaration::parse_with_expression(tokens),
-            Token::Semicolon => VariableDeclaration::parse_without_expression(tokens),
-            other => panic!("Malformed variable declaration: {:?}", other),
+            Token::Equal => Self::parse_with_expression(tokens),
+            Token::Semicolon => Self::parse_without_expression(tokens),
+            other => panic!("Malformed variable declaration: {other:?}"),
         }
     }
 
-    fn parse_with_expression(tokens: &mut Vec<Token>) -> VariableDeclaration {
+    fn parse_with_expression(tokens: &mut Vec<Token>) -> Self {
         consume(Token::Int, tokens);
         let identifier = parse_identifier(tokens);
         consume(Token::Equal, tokens);
         let expression = Expression::parse(tokens, 0);
         consume(Token::Semicolon, tokens);
-        VariableDeclaration {
+        Self {
             name: identifier,
             init: Some(expression),
         }
     }
 
-    fn parse_without_expression(tokens: &mut Vec<Token>) -> VariableDeclaration {
+    fn parse_without_expression(tokens: &mut Vec<Token>) -> Self {
         consume(Token::Int, tokens);
         let identifier = parse_identifier(tokens);
         consume(Token::Semicolon, tokens);
-        VariableDeclaration {
+        Self {
             name: identifier,
             init: None,
         }
@@ -139,16 +139,16 @@ pub enum Declaration {
 }
 
 impl Declaration {
-    fn parse(tokens: &mut Vec<Token>) -> Declaration {
+    fn parse(tokens: &mut Vec<Token>) -> Self {
         match &tokens[2] {
             Token::Equal => {
-                Declaration::VarDecl(VariableDeclaration::parse_with_expression(tokens))
+                Self::VarDecl(VariableDeclaration::parse_with_expression(tokens))
             }
             Token::Semicolon => {
-                Declaration::VarDecl(VariableDeclaration::parse_without_expression(tokens))
+                Self::VarDecl(VariableDeclaration::parse_without_expression(tokens))
             }
-            Token::OpenParan => Declaration::FunDecl(FunctionDeclaration::parse(tokens)),
-            other => panic!("Malformed declaration: {:?}", other),
+            Token::OpenParan => Self::FunDecl(FunctionDeclaration::parse(tokens)),
+            other => panic!("Malformed declaration: {other:?}"),
         }
     }
 }
@@ -170,54 +170,54 @@ pub enum Statement {
     Expression(Expression),
     If {
         condition: Expression,
-        then: Box<Statement>,
-        otherwise: Option<Box<Statement>>,
+        then: Box<Self>,
+        otherwise: Option<Box<Self>>,
     },
     Compound(Block),
     Break,
     Continue,
     While {
         condition: Expression,
-        body: Box<Statement>,
+        body: Box<Self>,
     },
     DoWhile {
         condition: Expression,
-        body: Box<Statement>,
+        body: Box<Self>,
     },
     For {
         init: ForInit,
         condition: Option<Expression>,
         post: Option<Expression>,
-        body: Box<Statement>,
+        body: Box<Self>,
     },
     Null,
 }
 
 impl Statement {
-    fn parse(tokens: &mut Vec<Token>) -> Statement {
+    fn parse(tokens: &mut Vec<Token>) -> Self {
         match tokens.first().unwrap() {
             Token::Return => {
                 consume(Token::Return, tokens);
                 let expression = Expression::parse(tokens, 0);
                 consume(Token::Semicolon, tokens);
-                Statement::Return(expression)
+                Self::Return(expression)
             }
             Token::Semicolon => {
                 consume(Token::Semicolon, tokens);
-                Statement::Null
+                Self::Null
             }
             Token::If => {
                 consume(Token::If, tokens);
                 consume(Token::OpenParan, tokens);
                 let condition = Expression::parse(tokens, 0);
                 consume(Token::CloseParan, tokens);
-                let then = Statement::parse(tokens);
+                let then = Self::parse(tokens);
                 let mut otherwise = None;
                 if tokens.first() == Some(&Token::Else) {
                     consume(Token::Else, tokens);
-                    otherwise = Some(Statement::parse(tokens));
+                    otherwise = Some(Self::parse(tokens));
                 }
-                Statement::If {
+                Self::If {
                     condition,
                     then: Box::new(then),
                     otherwise: otherwise.map(Box::new),
@@ -226,30 +226,30 @@ impl Statement {
             Token::Break => {
                 consume(Token::Break, tokens);
                 consume(Token::Semicolon, tokens);
-                Statement::Break
+                Self::Break
             }
             Token::Continue => {
                 consume(Token::Continue, tokens);
                 consume(Token::Semicolon, tokens);
-                Statement::Continue
+                Self::Continue
             }
             Token::While => {
                 consume(Token::While, tokens);
                 consume(Token::OpenParan, tokens);
                 let condition = Expression::parse(tokens, 0);
                 consume(Token::CloseParan, tokens);
-                let body = Box::new(Statement::parse(tokens));
-                Statement::While { condition, body }
+                let body = Box::new(Self::parse(tokens));
+                Self::While { condition, body }
             }
             Token::Do => {
                 consume(Token::Do, tokens);
-                let body = Box::new(Statement::parse(tokens));
+                let body = Box::new(Self::parse(tokens));
                 consume(Token::While, tokens);
                 consume(Token::OpenParan, tokens);
                 let condition = Expression::parse(tokens, 0);
                 consume(Token::CloseParan, tokens);
                 consume(Token::Semicolon, tokens);
-                Statement::DoWhile { condition, body }
+                Self::DoWhile { condition, body }
             }
             Token::For => {
                 consume(Token::For, tokens);
@@ -259,19 +259,19 @@ impl Statement {
                 consume(Token::Semicolon, tokens);
                 let post = Expression::parse_optional(tokens, Token::CloseParan);
                 consume(Token::CloseParan, tokens);
-                let body = Box::new(Statement::parse(tokens));
-                Statement::For {
+                let body = Box::new(Self::parse(tokens));
+                Self::For {
                     init,
                     condition,
                     post,
                     body,
                 }
             }
-            Token::OpenBrace => Statement::Compound(Block::parse(tokens)),
+            Token::OpenBrace => Self::Compound(Block::parse(tokens)),
             _exp => {
                 let expression = Expression::parse(tokens, 0);
                 consume(Token::Semicolon, tokens);
-                Statement::Expression(expression)
+                Self::Expression(expression)
             }
         }
     }
@@ -284,17 +284,17 @@ pub enum ForInit {
 }
 
 impl ForInit {
-    fn parse(tokens: &mut Vec<Token>) -> ForInit {
+    fn parse(tokens: &mut Vec<Token>) -> Self {
         if tokens.first() == Some(&Token::Int) {
-            return ForInit::D(VariableDeclaration::parse(tokens));
+            return Self::D(VariableDeclaration::parse(tokens));
         }
 
         if let Some(e) = Expression::parse_optional(tokens, Token::Semicolon) {
             consume(Token::Semicolon, tokens);
-            ForInit::E(Some(e))
+            Self::E(Some(e))
         } else {
             consume(Token::Semicolon, tokens);
-            ForInit::E(None)
+            Self::E(None)
         }
     }
 }
@@ -305,31 +305,31 @@ pub enum Expression {
     Var(Identifier),
     Unary {
         operator: UnaryOp,
-        operand: Box<Expression>,
+        operand: Box<Self>,
     },
     Binary {
         operator: BinaryOp,
-        left_expression: Box<Expression>,
-        right_expression: Box<Expression>,
+        left_expression: Box<Self>,
+        right_expression: Box<Self>,
     },
     Assignment {
-        lvalue: Box<Expression>,
-        expression: Box<Expression>,
+        lvalue: Box<Self>,
+        expression: Box<Self>,
     },
     Conditional {
-        condition: Box<Expression>,
-        then: Box<Expression>,
-        otherwise: Box<Expression>,
+        condition: Box<Self>,
+        then: Box<Self>,
+        otherwise: Box<Self>,
     },
     FunctionCall {
         identifier: Identifier,
-        args: Vec<Expression>,
+        args: Vec<Self>,
     },
 }
 
 impl Expression {
-    fn parse(tokens: &mut Vec<Token>, min_prec: u8) -> Expression {
-        let mut left = Expression::parse_factor(tokens);
+    fn parse(tokens: &mut Vec<Token>, min_prec: u8) -> Self {
+        let mut left = Self::parse_factor(tokens);
 
         #[allow(clippy::while_let_loop)]
         loop {
@@ -346,8 +346,8 @@ impl Expression {
             match binary_op {
                 BinaryOp::Assignment => {
                     consume(Token::Equal, tokens);
-                    let right = Expression::parse(tokens, prec);
-                    left = Expression::Assignment {
+                    let right = Self::parse(tokens, prec);
+                    left = Self::Assignment {
                         lvalue: Box::new(left),
                         expression: Box::new(right),
                     };
@@ -355,12 +355,12 @@ impl Expression {
                 BinaryOp::Ternary => {
                     let middle = {
                         consume(Token::QuestionMark, tokens);
-                        let middle = Expression::parse(tokens, 0);
+                        let middle = Self::parse(tokens, 0);
                         consume(Token::Colon, tokens);
                         middle
                     };
-                    let right = Expression::parse(tokens, prec);
-                    left = Expression::Conditional {
+                    let right = Self::parse(tokens, prec);
+                    left = Self::Conditional {
                         condition: Box::new(left),
                         then: Box::new(middle),
                         otherwise: Box::new(right),
@@ -368,8 +368,8 @@ impl Expression {
                 }
                 _ => {
                     tokens.remove(0);
-                    let right = Expression::parse(tokens, prec + 1);
-                    left = Expression::Binary {
+                    let right = Self::parse(tokens, prec + 1);
+                    left = Self::Binary {
                         operator: binary_op,
                         left_expression: Box::new(left),
                         right_expression: Box::new(right),
@@ -381,60 +381,60 @@ impl Expression {
         left
     }
 
-    fn parse_optional(tokens: &mut Vec<Token>, end_token: Token) -> Option<Expression> {
+    fn parse_optional(tokens: &mut Vec<Token>, end_token: Token) -> Option<Self> {
         if tokens.first() == Some(&end_token) {
             None
         } else {
-            Some(Expression::parse(tokens, 0))
+            Some(Self::parse(tokens, 0))
         }
     }
 
-    fn parse_factor(tokens: &mut Vec<Token>) -> Expression {
+    fn parse_factor(tokens: &mut Vec<Token>) -> Self {
         let token = tokens.remove(0);
         match UnaryOp::parse(&token) {
-            Ok(unary_op) => Expression::Unary {
+            Ok(unary_op) => Self::Unary {
                 operator: unary_op,
-                operand: Box::new(Expression::parse_factor(tokens)),
+                operand: Box::new(Self::parse_factor(tokens)),
             },
             Err(_) => match token {
-                Token::Constant(i) => Expression::Constant(i),
+                Token::Constant(i) => Self::Constant(i),
                 Token::OpenParan => {
-                    let expr = Expression::parse(tokens, 0);
+                    let expr = Self::parse(tokens, 0);
                     consume(Token::CloseParan, tokens);
                     expr
                 }
                 Token::Identifier(i) => {
                     if tokens.first() == Some(&Token::OpenParan) {
                         consume(Token::OpenParan, tokens);
-                        let mut args: Vec<Expression> = vec![];
+                        let mut args: Vec<Self> = vec![];
                         if tokens.first() != Some(&Token::CloseParan) {
-                            args.extend(Expression::parse_argument_list(tokens))
+                            args.extend(Self::parse_argument_list(tokens));
                         }
                         consume(Token::CloseParan, tokens);
-                        return Expression::FunctionCall {
+                        return Self::FunctionCall {
                             identifier: i,
                             args,
                         };
                     }
-                    Expression::Var(i)
+                    Self::Var(i)
                 }
-                t => panic!("Malformed factor: {:?}", t),
+                t => panic!("Malformed factor: {t:?}"),
             },
         }
     }
 
-    fn parse_argument_list(tokens: &mut Vec<Token>) -> Vec<Expression> {
-        let mut args: Vec<Expression> = vec![];
-        args.push(Expression::parse(tokens, 0));
+    fn parse_argument_list(tokens: &mut Vec<Token>) -> Vec<Self> {
+        let mut args: Vec<Self> = vec![];
+        args.push(Self::parse(tokens, 0));
         while tokens.first() == Some(&Token::Comma) {
             consume(Token::Comma, tokens);
-            args.push(Expression::parse(tokens, 0));
+            args.push(Self::parse(tokens, 0));
         }
         args
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum BinaryOp {
     Add,
     Subtract,
@@ -456,38 +456,38 @@ pub enum BinaryOp {
 impl BinaryOp {
     fn parse(token: &Token) -> Result<BinaryOp, &'static str> {
         Ok(match token {
-            Token::Plus => BinaryOp::Add,
-            Token::Minus => BinaryOp::Subtract,
-            Token::Asterisk => BinaryOp::Multiply,
-            Token::ForwardSlash => BinaryOp::Divide,
-            Token::Percent => BinaryOp::Remainder,
-            Token::DoubleAmpersands => BinaryOp::And,
-            Token::DoubleBar => BinaryOp::Or,
-            Token::DoubleEqual => BinaryOp::Equal,
-            Token::ExclamationEqual => BinaryOp::NotEqual,
-            Token::LeftAngleBracket => BinaryOp::LessThan,
-            Token::RightAngleBracket => BinaryOp::GreaterThan,
-            Token::LeftAngleBracketEqual => BinaryOp::LessOrEqual,
-            Token::RightAngleBracketEqual => BinaryOp::GreaterOrEqual,
-            Token::Equal => BinaryOp::Assignment,
-            Token::QuestionMark => BinaryOp::Ternary,
+            Token::Plus => Self::Add,
+            Token::Minus => Self::Subtract,
+            Token::Asterisk => Self::Multiply,
+            Token::ForwardSlash => Self::Divide,
+            Token::Percent => Self::Remainder,
+            Token::DoubleAmpersands => Self::And,
+            Token::DoubleBar => Self::Or,
+            Token::DoubleEqual => Self::Equal,
+            Token::ExclamationEqual => Self::NotEqual,
+            Token::LeftAngleBracket => Self::LessThan,
+            Token::RightAngleBracket => Self::GreaterThan,
+            Token::LeftAngleBracketEqual => Self::LessOrEqual,
+            Token::RightAngleBracketEqual => Self::GreaterOrEqual,
+            Token::Equal => Self::Assignment,
+            Token::QuestionMark => Self::Ternary,
             _ => return Err("Token does not correspond to binary operator"),
         })
     }
 
     fn precedence(&self) -> u8 {
         match self {
-            BinaryOp::Multiply | BinaryOp::Divide | BinaryOp::Remainder => 50,
-            BinaryOp::Add | BinaryOp::Subtract => 45,
-            BinaryOp::LessThan
-            | BinaryOp::LessOrEqual
-            | BinaryOp::GreaterThan
-            | BinaryOp::GreaterOrEqual => 35,
-            BinaryOp::Equal | BinaryOp::NotEqual => 30,
-            BinaryOp::And => 10,
-            BinaryOp::Or => 5,
-            BinaryOp::Ternary => 3,
-            BinaryOp::Assignment => 1,
+            Self::Multiply | Self::Divide | Self::Remainder => 50,
+            Self::Add | Self::Subtract => 45,
+            Self::LessThan
+            | Self::LessOrEqual
+            | Self::GreaterThan
+            | Self::GreaterOrEqual => 35,
+            Self::Equal | Self::NotEqual => 30,
+            Self::And => 10,
+            Self::Or => 5,
+            Self::Ternary => 3,
+            Self::Assignment => 1,
         }
     }
 }
@@ -502,9 +502,9 @@ pub enum UnaryOp {
 impl UnaryOp {
     fn parse(token: &Token) -> Result<Self, &'static str> {
         Ok(match token {
-            Token::Tilde => UnaryOp::Complement,
-            Token::Minus => UnaryOp::Negate,
-            Token::Exclamation => UnaryOp::Not,
+            Token::Tilde => Self::Complement,
+            Token::Minus => Self::Negate,
+            Token::Exclamation => Self::Not,
             _ => return Err("Token does not correspond to unary operator"),
         })
     }

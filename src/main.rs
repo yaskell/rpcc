@@ -32,18 +32,18 @@ fn main() {
     let file_content =
         fs::read_to_string(format!("{filename_base}.i")).expect("Could not read file");
 
-    let _ = fs::remove_file(format!("{}.i", filename_base).as_str());
+    let _ = fs::remove_file(format!("{filename_base}.i").as_str());
 
     let mut tokens = lexer::lex(&file_content);
-    if let Some(Flag::Lex) = arguments.flag {
+    if matches!(arguments.flag, Some(Flag::Lex)) {
         println!("Lexed file contents:");
         dbg!(&tokens);
         process::exit(0);
     }
 
     let ast = parser::parse(&mut tokens);
-    if let Some(Flag::Parse) = arguments.flag {
-        println!("Parsed file contents:",);
+    if matches!(arguments.flag, Some(Flag::Parse)) {
+        println!("Parsed file contents:");
         dbg!(&ast);
         process::exit(0);
     }
@@ -51,14 +51,14 @@ fn main() {
     let ast = resolve_identifiers(ast);
     let _symbols = check_types(&ast);
     let ast = label_loops(ast);
-    if let Some(Flag::Validate) = arguments.flag {
+    if matches!(arguments.flag, Some(Flag::Validate)) {
         println!("Validated file contents:");
         dbg!(&ast);
         process::exit(0);
     }
 
     let ir = ir::translate_program(ast);
-    if let Some(Flag::IR) = arguments.flag {
+    if matches!(arguments.flag, Some(Flag::IR)) {
         println!("IR Generation:");
         dbg!(&ir);
         process::exit(0);
@@ -67,7 +67,7 @@ fn main() {
     let asm_ast = asm::translate_program(ir);
     let asm_ast = asm::replace_pseudo_registers(asm_ast);
     let asm_ast = asm::fix_program(asm_ast);
-    if let Some(Flag::Codegen) = arguments.flag {
+    if matches!(arguments.flag, Some(Flag::Codegen)) {
         println!("Assembly Generation:");
         dbg!(&asm_ast);
         process::exit(0);
@@ -75,7 +75,7 @@ fn main() {
 
     let program = code_emission::emit(asm_ast);
     if fs::write(format!("{filename_base}.s"), program).is_ok() {
-        if let Some(Flag::Object) = arguments.flag {
+        if matches!(arguments.flag, Some(Flag::Object)) {
             run_command(
                 "gcc",
                 &[
@@ -94,7 +94,7 @@ fn main() {
             .expect("Linking failed");
         }
 
-        if let Some(Flag::Assembly) = arguments.flag {
+        if matches!(arguments.flag, Some(Flag::Assembly)) {
             process::exit(0);
         }
 
@@ -122,7 +122,7 @@ struct Arguments {
 }
 
 impl Arguments {
-    fn new(args: &[String]) -> Arguments {
+    fn new(args: &[String]) -> Self {
         if args.len() > 1 && args[1] == "--help" {
             usage_message();
         }
@@ -157,7 +157,7 @@ impl Arguments {
             };
         }
 
-        Arguments { file_path, flag }
+        Self { file_path, flag }
     }
 }
 

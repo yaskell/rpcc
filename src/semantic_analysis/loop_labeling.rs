@@ -7,7 +7,7 @@ struct LoopLabelGenerator {
 }
 
 impl LoopLabelGenerator {
-    fn new() -> Self {
+    const fn new() -> Self {
         Self { next_loop_id: 0 }
     }
 
@@ -48,13 +48,13 @@ impl LabeledDeclaration {
     ) -> Self {
         match declaration {
             parser::Declaration::FunDecl(parser::FunctionDeclaration { name, params, body }) => {
-                LabeledDeclaration::LabeledFuncDecl(LabeledFunctionDeclaration {
+                Self::LabeledFuncDecl(LabeledFunctionDeclaration {
                     name,
                     params,
                     body: body.map(|b| LabeledBlock::from(b, current_label, label_generator)),
                 })
             }
-            parser::Declaration::VarDecl(vd) => LabeledDeclaration::LabeledVarDecl(vd),
+            parser::Declaration::VarDecl(vd) => Self::LabeledVarDecl(vd),
         }
     }
 }
@@ -71,8 +71,8 @@ impl LabeledFunctionDeclaration {
         parser::FunctionDeclaration { name, params, body }: parser::FunctionDeclaration,
         current_label: Option<Identifier>,
         label_generator: &mut LoopLabelGenerator,
-    ) -> LabeledFunctionDeclaration {
-        LabeledFunctionDeclaration {
+    ) -> Self {
+        Self {
             name,
             params,
             body: body.map(|b| LabeledBlock::from(b, current_label, label_generator)),
@@ -88,8 +88,8 @@ impl LabeledBlock {
         block: parser::Block,
         current_label: Option<Identifier>,
         labeler: &mut LoopLabelGenerator,
-    ) -> LabeledBlock {
-        LabeledBlock(
+    ) -> Self {
+        Self(
             block
                 .0
                 .into_iter()
@@ -110,13 +110,13 @@ impl LabeledBlockItem {
         item: parser::BlockItem,
         current_label: Option<Identifier>,
         labeler: &mut LoopLabelGenerator,
-    ) -> LabeledBlockItem {
+    ) -> Self {
         match item {
             parser::BlockItem::S(statement) => {
-                LabeledBlockItem::S(LabeledStatement::from(statement, current_label, labeler))
+                Self::S(LabeledStatement::from(statement, current_label, labeler))
             }
             parser::BlockItem::D(d) => {
-                LabeledBlockItem::D(LabeledDeclaration::from(d, current_label, labeler))
+                Self::D(LabeledDeclaration::from(d, current_label, labeler))
             }
         }
     }
@@ -128,27 +128,27 @@ pub enum LabeledStatement {
     Expression(parser::Expression),
     If {
         condition: parser::Expression,
-        then: Box<LabeledStatement>,
-        otherwise: Option<Box<LabeledStatement>>,
+        then: Box<Self>,
+        otherwise: Option<Box<Self>>,
     },
     Compound(LabeledBlock),
     Break(Identifier),
     Continue(Identifier),
     While {
         condition: parser::Expression,
-        body: Box<LabeledStatement>,
+        body: Box<Self>,
         label: Identifier,
     },
     DoWhile {
         condition: parser::Expression,
-        body: Box<LabeledStatement>,
+        body: Box<Self>,
         label: Identifier,
     },
     For {
         init: parser::ForInit,
         condition: Option<parser::Expression>,
         post: Option<parser::Expression>,
-        body: Box<LabeledStatement>,
+        body: Box<Self>,
         label: Identifier,
     },
     Null,
@@ -159,36 +159,36 @@ impl LabeledStatement {
         statement: parser::Statement,
         current_label: Option<Identifier>,
         labeler: &mut LoopLabelGenerator,
-    ) -> LabeledStatement {
+    ) -> Self {
         match statement {
             parser::Statement::Compound(block) => {
-                LabeledStatement::Compound(LabeledBlock::from(block, current_label, labeler))
+                Self::Compound(LabeledBlock::from(block, current_label, labeler))
             }
 
             parser::Statement::Break => match current_label {
-                Some(label) => LabeledStatement::Break(label),
+                Some(label) => Self::Break(label),
                 None => panic!("Break statement outside of loop"),
             },
 
             parser::Statement::Continue => match current_label {
-                Some(label) => LabeledStatement::Continue(label),
+                Some(label) => Self::Continue(label),
                 None => panic!("Continue statement outside of loop"),
             },
 
             parser::Statement::While { condition, body } => {
                 let label = labeler.new_label();
-                LabeledStatement::While {
+                Self::While {
                     condition,
-                    body: Box::new(LabeledStatement::from(*body, Some(label.clone()), labeler)),
+                    body: Box::new(Self::from(*body, Some(label.clone()), labeler)),
                     label,
                 }
             }
 
             parser::Statement::DoWhile { condition, body } => {
                 let label = labeler.new_label();
-                LabeledStatement::DoWhile {
+                Self::DoWhile {
                     condition,
-                    body: Box::new(LabeledStatement::from(*body, Some(label.clone()), labeler)),
+                    body: Box::new(Self::from(*body, Some(label.clone()), labeler)),
                     label,
                 }
             }
@@ -200,32 +200,32 @@ impl LabeledStatement {
                 body,
             } => {
                 let label = labeler.new_label();
-                LabeledStatement::For {
+                Self::For {
                     init,
                     condition,
                     post,
-                    body: Box::new(LabeledStatement::from(*body, Some(label.clone()), labeler)),
+                    body: Box::new(Self::from(*body, Some(label.clone()), labeler)),
                     label,
                 }
             }
 
-            parser::Statement::Null => LabeledStatement::Null,
-            parser::Statement::Return(expression) => LabeledStatement::Return(expression),
-            parser::Statement::Expression(expression) => LabeledStatement::Expression(expression),
+            parser::Statement::Null => Self::Null,
+            parser::Statement::Return(expression) => Self::Return(expression),
+            parser::Statement::Expression(expression) => Self::Expression(expression),
 
             parser::Statement::If {
                 condition,
                 then,
                 otherwise,
-            } => LabeledStatement::If {
+            } => Self::If {
                 condition,
-                then: Box::new(LabeledStatement::from(
+                then: Box::new(Self::from(
                     *then,
                     current_label.clone(),
                     labeler,
                 )),
                 otherwise: otherwise
-                    .map(|s| Box::new(LabeledStatement::from(*s, current_label, labeler))),
+                    .map(|s| Box::new(Self::from(*s, current_label, labeler))),
             },
         }
     }

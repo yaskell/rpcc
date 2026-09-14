@@ -46,14 +46,12 @@ pub enum Token {
 }
 
 impl Token {
-    fn new(token_value: regex::Match, token_type: &Token) -> Token {
+    fn new(token_value: regex::Match, token_type: &Self) -> Self {
         match token_type {
-            Token::Identifier(_) => KEYWORD_TOKENS_DEFINITIONS
+            Self::Identifier(_) => KEYWORD_TOKENS_DEFINITIONS
                 .iter()
-                .find(|kw| kw.regex.is_match(token_value.as_str()))
-                .map(|kw| kw.token_type.clone())
-                .unwrap_or_else(|| Token::Identifier(token_value.as_str().to_string())),
-            Token::Constant(_) => Token::Constant(
+                .find(|kw| kw.regex.is_match(token_value.as_str())).map_or_else(|| Self::Identifier(token_value.as_str().to_string()), |kw| kw.token_type.clone()),
+            Self::Constant(_) => Self::Constant(
                 token_value
                     .as_str()
                     .parse::<i32>()
@@ -118,7 +116,7 @@ pub static KEYWORD_TOKENS_DEFINITIONS: LazyLock<Vec<TokenDefinition>> = LazyLock
 pub static OTHER_TOKENS_DEFINITIONS: LazyLock<Vec<TokenDefinition>> = LazyLock::new(|| {
     vec![
         TokenDefinition {
-            token_type: Token::Identifier("".to_string()),
+            token_type: Token::Identifier(String::new()),
             regex: Regex::new(r"^[a-zA-Z_]\w*\b").unwrap(),
         },
         TokenDefinition {
@@ -248,22 +246,19 @@ pub fn lex(mut file: &str) -> Vec<Token> {
             continue;
         }
 
-        match find_longest_match(file) {
-            Some(m) => {
-                tokens.push(Token::new(m.value, m.token_type));
-                file = &file[m.value.end()..];
-            }
-            None => {
-                let invalid_token = file.split_whitespace().next().unwrap_or(file);
-                eprintln!("Invalid token: \"{invalid_token}\"");
-                process::exit(1);
-            }
+        if let Some(m) = find_longest_match(file) {
+            tokens.push(Token::new(m.value, m.token_type));
+            file = &file[m.value.end()..];
+        } else {
+            let invalid_token = file.split_whitespace().next().unwrap_or(file);
+            eprintln!("Invalid token: \"{invalid_token}\"");
+            process::exit(1);
         }
     }
     tokens
 }
 
-fn find_longest_match<'a>(file: &'a str) -> Option<Capture<'a>> {
+fn find_longest_match(file: &str) -> Option<Capture<'_>> {
     OTHER_TOKENS_DEFINITIONS
         .iter()
         .filter_map(|token_definition| {
@@ -281,9 +276,9 @@ fn check_if_comment(file: &str) -> Option<Match<'_>> {
 
     if let Some(x) = single_line_comment.find(file) {
         return Some(x);
-    };
+    }
     if let Some(x) = multi_line_comment.find(file) {
         return Some(x);
-    };
+    }
     None
 }

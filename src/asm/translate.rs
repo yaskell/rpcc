@@ -8,8 +8,8 @@ pub fn translate_program(program: ir::Program) -> asm::Program {
 }
 
 impl From<ir::Program> for asm::Program {
-    fn from(program: ir::Program) -> asm::Program {
-        asm::Program {
+    fn from(program: ir::Program) -> Self {
+        Self {
             functions: program
                 .functions
                 .into_iter()
@@ -20,8 +20,8 @@ impl From<ir::Program> for asm::Program {
 }
 
 impl From<ir::Function> for asm::Function {
-    fn from(function: ir::Function) -> asm::Function {
-        asm::Function {
+    fn from(function: ir::Function) -> Self {
+        Self {
             name: function.identifier,
             stack_size: 0,
             instructions: function
@@ -65,7 +65,7 @@ fn translate_instruction(instruction: ir::Instruction) -> Vec<asm::Instruction> 
                 src: val.into(),
                 dst: asm::Operand::Register(asm::Register::AX),
             });
-            asm_instructions.push(asm::Instruction::Ret)
+            asm_instructions.push(asm::Instruction::Ret);
         }
         ir::Instruction::Unary { op, src, dst } => {
             let dst: asm::Operand = dst.into();
@@ -77,8 +77,8 @@ fn translate_instruction(instruction: ir::Instruction) -> Vec<asm::Instruction> 
                     });
                     asm_instructions.push(asm::Instruction::Unary {
                         op: op.into(),
-                        operand: dst.clone(),
-                    })
+                        operand: dst,
+                    });
                 }
                 ir::UnaryOp::Not => {
                     asm_instructions.push(asm::Instruction::Cmp {
@@ -192,7 +192,7 @@ fn translate_instruction(instruction: ir::Instruction) -> Vec<asm::Instruction> 
             });
         }
         ir::Instruction::Label(identifier) => {
-            asm_instructions.push(asm::Instruction::Label(identifier))
+            asm_instructions.push(asm::Instruction::Label(identifier));
         }
         ir::Instruction::FunCall {
             fun_name,
@@ -203,21 +203,21 @@ fn translate_instruction(instruction: ir::Instruction) -> Vec<asm::Instruction> 
             let stack_padding = if stack_args.len() % 2 == 0 { 0 } else { 8 };
 
             if stack_padding != 0 {
-                asm_instructions.push(asm::Instruction::AllocateStack(stack_padding))
-            };
+                asm_instructions.push(asm::Instruction::AllocateStack(stack_padding));
+            }
 
             register_args.iter().enumerate().for_each(|(i, parameter)| {
                 asm_instructions.push(asm::Instruction::Move {
                     src: asm::Operand::from(parameter.clone()),
                     dst: get_register_for_param(i),
-                })
+                });
             });
 
             stack_args.iter().rev().for_each(|stack_arg| {
                 let stack_arg = asm::Operand::from(stack_arg.clone());
                 match stack_arg {
                     asm::Operand::Register(_) | asm::Operand::Imm(_) => {
-                        asm_instructions.push(asm::Instruction::Push(stack_arg))
+                        asm_instructions.push(asm::Instruction::Push(stack_arg));
                     }
                     _ => {
                         asm_instructions.push(asm::Instruction::Move {
@@ -248,33 +248,33 @@ fn translate_instruction(instruction: ir::Instruction) -> Vec<asm::Instruction> 
 }
 
 impl From<ir::Val> for asm::Operand {
-    fn from(val: ir::Val) -> asm::Operand {
+    fn from(val: ir::Val) -> Self {
         match val {
-            ir::Val::Constant(c) => asm::Operand::Imm(c),
-            ir::Val::Var(v) => asm::Operand::Pseudo(v),
+            ir::Val::Constant(c) => Self::Imm(c),
+            ir::Val::Var(v) => Self::Pseudo(v),
         }
     }
 }
 
 impl From<ir::BinaryOp> for asm::ConditionalCode {
-    fn from(code: ir::BinaryOp) -> asm::ConditionalCode {
+    fn from(code: ir::BinaryOp) -> Self {
         match code {
-            ir::BinaryOp::Equal => asm::ConditionalCode::E,
-            ir::BinaryOp::NotEqual => asm::ConditionalCode::NE,
-            ir::BinaryOp::LessThan => asm::ConditionalCode::L,
-            ir::BinaryOp::LessOrEqual => asm::ConditionalCode::LE,
-            ir::BinaryOp::GreaterThan => asm::ConditionalCode::G,
-            ir::BinaryOp::GreaterOrEqual => asm::ConditionalCode::GE,
+            ir::BinaryOp::Equal => Self::E,
+            ir::BinaryOp::NotEqual => Self::NE,
+            ir::BinaryOp::LessThan => Self::L,
+            ir::BinaryOp::LessOrEqual => Self::LE,
+            ir::BinaryOp::GreaterThan => Self::G,
+            ir::BinaryOp::GreaterOrEqual => Self::GE,
             _ => panic!("Not a comparison operand"),
         }
     }
 }
 
 impl From<ir::UnaryOp> for asm::UnaryOp {
-    fn from(unary_op: ir::UnaryOp) -> asm::UnaryOp {
+    fn from(unary_op: ir::UnaryOp) -> Self {
         match unary_op {
-            ir::UnaryOp::Complement => asm::UnaryOp::Not,
-            ir::UnaryOp::Negate => asm::UnaryOp::Neg,
+            ir::UnaryOp::Complement => Self::Not,
+            ir::UnaryOp::Negate => Self::Neg,
             ir::UnaryOp::Not => {
                 panic!("IR unary logical NOT is not converted into asm unary structure")
             }

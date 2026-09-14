@@ -34,8 +34,8 @@ pub struct IdentifierData {
 }
 
 impl IdentifierAllocator {
-    fn new() -> IdentifierAllocator {
-        IdentifierAllocator {
+    fn new() -> Self {
+        Self {
             identifier_count: 0,
             map: HashMap::<String, IdentifierData>::new(),
         }
@@ -77,7 +77,7 @@ impl IdentifierAllocator {
     fn new_scope(&mut self) -> Self {
         let mut new_allocator = self.clone();
         for v in new_allocator.map.values_mut() {
-            v.from_current_scope = false
+            v.from_current_scope = false;
         }
         new_allocator
     }
@@ -138,7 +138,7 @@ pub fn resolve_function_declaration(
     parser::FunctionDeclaration { name, params, body }: parser::FunctionDeclaration,
     allocator: &mut IdentifierAllocator,
 ) -> parser::FunctionDeclaration {
-    let resolved_name = allocator.allocate_identifier(name.clone(), Linkage::ExternalLinkage);
+    let resolved_name = allocator.allocate_identifier(name, Linkage::ExternalLinkage);
 
     let mut new_allocator = allocator.new_scope();
 
@@ -181,13 +181,13 @@ pub fn resolve_exp(
                     expression: Box::new(resolve_exp(*expression, allocator)),
                 };
             }
-            panic!("Invalid lvalue: `{:?}`", lvalue)
+            panic!("Invalid lvalue: `{lvalue:?}`")
         }
         parser::Expression::Var(v) => match allocator.map.get(&v) {
             Some(IdentifierData { name: new_name, .. }) => {
                 parser::Expression::Var(new_name.clone())
             }
-            None => panic!("Undeclared variable: `{}`", v),
+            None => panic!("Undeclared variable: `{v}`"),
         },
         parser::Expression::Unary { operator, operand } => parser::Expression::Unary {
             operator,
@@ -214,7 +214,7 @@ pub fn resolve_exp(
         parser::Expression::FunctionCall { identifier, args } => {
             let new_name = match allocator.map.get(&identifier) {
                 Some(IdentifierData { name: new_name, .. }) => new_name.clone(),
-                None => panic!("Undeclared function: `{}`", identifier),
+                None => panic!("Undeclared function: `{identifier}`"),
             };
 
             let new_args = args
